@@ -91,7 +91,10 @@ class Codeblock:
     @staticmethod
     def _md(lines: list) -> tuple:
         # Get language after ``` designator
-        lang = lines[0].lstrip()[3:]  # `lstrip()` used in document parsing
+        lang = (
+            lines[0].lstrip()[3:].lstrip()
+        )  # first `lstrip()` used in document parsing
+        lang = lang if lang != "" else None
 
         # Read lines
         code = []
