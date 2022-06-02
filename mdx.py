@@ -1,5 +1,11 @@
 from pathlib import Path
+from pydoc import doc
 import docx
+from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.text import WD_BREAK
+from docx.shared import RGBColor, Pt, Inches
+
+STYLE_CODE = "Code"
 
 
 class Heading:
@@ -66,7 +72,9 @@ class Paragraph:
 
     @staticmethod
     def _md(line: str):
+        # Make new paragraph
         para = Paragraph([])
+        # Parse through runs
         para.append(Run(line))  # TODO: actually parse runs
         return para
 
@@ -116,13 +124,17 @@ class Codeblock:
             # Add big single run for line
             para.append(Run(line))
             # Submit to docx
-            para._docx(docx_doc)
+            docx_para = para._docx(docx_doc)
+            # Change style of submitted
+            docx_para.style = STYLE_CODE
 
 
 class Document:
     """High-level document abstractions for conversion"""
 
     elements = []
+    title = None
+    subtitle = None
 
     def __init__(self, md: str):
         # Get and clear up lines
@@ -156,6 +168,7 @@ class Document:
 
             # TODO: bullet point, make sure to pipe in stock `line` after detection
             # TODO: numbered point, make sure to pipe in stock `line` after detection
+            # TODO: image
 
             # Move to next line
             ind += 1
@@ -164,8 +177,58 @@ class Document:
         """Saves document to `path` provided"""
         # Create docx file
         docx_doc = docx.Document()
+
+        # Fonts
+        FONT_HEADING = "Helvetica"
+        FONT_BODY = "Helvetica"
+        FONT_CODE = "IBM Plex Mono"
+
+        # Styling for headings
+        for h in range(1, 9):
+            style_heading = docx_doc.styles[f"Heading {h}"]
+            style_heading.font.name = FONT_HEADING
+            style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+
+            if h == 1:
+                style_heading.font.size = Pt(22)
+                style_heading.paragraph_format.space_after = Pt(2)
+            elif h == 2:
+                style_heading.font.size = Pt(17)
+            elif h == 3:
+                style_heading.font.size = Pt(13)
+
+        # Styling for paragraphs
+        style_paragraph = docx_doc.styles["Normal"]
+        style_paragraph.font.name = FONT_BODY
+        style_paragraph.font.size = Pt(12)
+
+        # Styling for codeblocks
+        style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
+        style_codeblock.font.name = FONT_CODE
+
+        # Add title/subtitle
+        if self.title or self.subtitle:
+            # Create 6 empty lines
+            for _ in range(6):
+                para = Paragraph([Run("")])
+                para._docx(docx_doc)
+
+            # Add title
+            if self.title:
+                docx_doc.add_heading(self.title, 0)
+            # Add subtitle
+            if self.subtitle:
+                docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
+                # TODO: centre `docx_para`
+
+            # Page break
+            docx_para = docx_doc.add_paragraph()
+            docx_run = docx_para.add_run()
+            docx_run.add_break(WD_BREAK.PAGE)
+
         # Add elements
         for element in self.elements:
             element._docx(docx_doc)
+
         # Use docx's vanilla save
         docx_doc.save(path)
