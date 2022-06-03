@@ -179,14 +179,36 @@ class Document:
         docx_doc = docx.Document()
 
         # Fonts
-        FONT_HEADING = "Helvetica"
-        FONT_BODY = "Helvetica"
+        FONT_HEADING = "IBM Plex Sans"
+        FONT_BODY = "IBM Plex Serif"
         FONT_CODE = "IBM Plex Mono"
+
+        print(docx_doc)
+
+        # Replace all fonts with body font by default
+        for style in docx_doc.styles:
+            if hasattr(style,"font"):
+                style.font.name = FONT_BODY
+
+        # Styling for title
+        style_title = docx_doc.styles["Title"]
+        _style_title_border(style_title)
+        style_title.font.name = FONT_HEADING
+        style_title.font.size = Pt(26)
+        style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        style_title.paragraph_format.space_after = Pt(3)
+
+        # Styling for subtitle
+        style_subtitle = docx_doc.styles["Subtitle"]
+        style_subtitle.font.size = Pt(14)
+        style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        style_subtitle.font.italic = False
 
         # Styling for headings
         for h in range(1, 9):
             style_heading = docx_doc.styles[f"Heading {h}"]
             style_heading.font.name = FONT_HEADING
+            style_heading.font.bold = False
             style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
             if h == 1:
@@ -199,7 +221,6 @@ class Document:
 
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
-        style_paragraph.font.name = FONT_BODY
         style_paragraph.font.size = Pt(12)
 
         # Styling for codeblocks
@@ -208,18 +229,20 @@ class Document:
 
         # Add title/subtitle
         if self.title or self.subtitle:
-            # Create 6 empty lines
-            for _ in range(6):
+            # Create empty lines before title
+            for _ in range(3):
                 para = Paragraph([Run("")])
                 para._docx(docx_doc)
 
             # Add title
             if self.title:
-                docx_doc.add_heading(self.title, 0)
+                docx_para = docx_doc.add_heading(self.title, 0)
+                docx_para.alignment = 1
             # Add subtitle
             if self.subtitle:
                 docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
-                # TODO: centre `docx_para`
+                docx_para.style = "Subtitle"
+                docx_para.alignment = 1
 
             # Page break
             docx_para = docx_doc.add_paragraph()
@@ -232,3 +255,10 @@ class Document:
 
         # Use docx's vanilla save
         docx_doc.save(path)
+
+
+def _style_title_border(style_title):
+    """Removes border style on title which is set by python-docx by default.
+    This is a hack because there's no programmatic way to do this as of writing"""
+    el = style_title._element
+    el.remove(el.xpath("w:pPr")[0])

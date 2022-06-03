@@ -1,3 +1,4 @@
 test.docx
 __pycache__/
 .vscode/
+.DS*
