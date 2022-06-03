@@ -133,19 +133,51 @@ class Codeblock:
         just = len(str(len(self.lines)))
         # Add lines
         for ind, line in enumerate(self.lines):
-            # Line number in bold and rest of line
-            run_line = Run(str(ind + 1).rjust(just), False, True)
-            run_code = Run(" " + line)
-            # Hijack paragraph and add big single run
-            para = Paragraph([run_line, run_code])
-            # Submit to docx
-            docx_para = para._docx(docx_doc)
-            code_style(docx_para)
+            # Figure out line number
+            num = str(ind + 1).rjust(just)
+            # Add new paragraph with code style
+            docx_para = docx_doc.add_paragraph()
+            docx_para.style = STYLE_CODE
+            # Add line number with italics
+            docx_run = docx_para.add_run(num)
+            docx_run.font.italic = True
+            # Add actual code
+            docx_para.add_run(" " + line)
 
-        # Add empty line because formatting goes weird
-        para = Paragraph([])
-        docx_para = para._docx(docx_doc)
-        code_style(docx_para)
+        # Add small codeblock line for formatting
+        # NOTE: could be it's own style for consistency
+        docx_para = docx_doc.add_paragraph()
+        docx_para.paragraph_format.space_after = Pt(0)
+        docx_para.paragraph_format.line_spacing = 0.7
+
+
+class Quote(Paragraph):
+    """Quote of something in it's own style"""
+
+    @staticmethod
+    def _md(line: str):
+        # Get levelling information
+        level = 0  # TODO: quote levelling information
+        # Clean line from > starter
+        line = line.lstrip()[1:].lstrip()
+        # Parse line using inheritance
+        para = super(Quote, Quote)._md(line)
+        # Convert para to quite
+        quote = Quote(
+            para.runs
+        )  # BODGE: python doesn't like staticmethod and inheritance
+        # Set levelling
+        quote.level = level
+        return quote
+
+    def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
+        # Get inherited generated paragraph
+        para = super()._docx(docx_doc)
+        # Reset to quote styling
+        para.style = "Quote"
+        para.alignment = 0
+        # TODO: quote level indent
+        return para
 
 
 class Document:
@@ -181,6 +213,9 @@ class Document:
                 codeblock, skip = Codeblock._md(lines[ind:])
                 ind += skip
                 self.elements.append(codeblock)
+            elif stripped.startswith(">"):
+                # Quote
+                self.elements.append(Quote._md(line))
             else:
                 # Paragraph
                 self.elements.append(Paragraph._md(stripped))
@@ -217,6 +252,7 @@ class Document:
 
         # Styling for subtitle
         style_subtitle = docx_doc.styles["Subtitle"]
+        style_subtitle.font.name = FONT_HEADING
         style_subtitle.font.size = Pt(14)
         style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_subtitle.font.italic = False

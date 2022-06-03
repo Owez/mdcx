@@ -1,6 +1,14 @@
 from mdx import Document
 
 md = """
+# Introduction
+
+This is a small testing document to make sure that my module works. Here's a quote from the author:
+
+> This is a quote which should have the same formatting as the line above.
+
+This sentence was written on the 3rd of June, 2022 and hasn't yet been modified. That's all I have to say about that. The next sections are taken and lightly modified from the documentation website I used to create this module, have fun!s
+
 # Working with Styles
 
 This page uses concepts developed in the prior page without introduction. If a term is unfamiliar, consult the prior page Understanding Styles for a definition.
