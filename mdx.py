@@ -39,6 +39,11 @@ class Run:
         underline: bool = False,
         strikethrough: bool = False,
     ):
+        # Check that run is a string; python doesn't have strong typing sadly
+        if type(text) != str:
+            raise Exception("Make sure this run is a string, this is a common mistake")
+
+        # Create tuns
         self.text = text
         self.bold = bold
         self.italic = italic
@@ -84,6 +89,8 @@ class Paragraph:
         # Add runs to paragraph
         for run in self.runs:
             run._docx(docx_para)
+        # Justify text
+        docx_para.alignment = 3
         return docx_para
 
 
@@ -117,16 +124,28 @@ class Codeblock:
         return (Codeblock(code, lang), skip)
 
     def _docx(self, docx_doc: docx.Document):
+        def code_style(docx_para):
+            """Restyles code from in-paragraph styling"""
+            docx_para.style = STYLE_CODE
+            docx_para.alignment = 0
+
+        # Calculate justification for lines
+        just = len(str(len(self.lines)))
         # Add lines
-        for line in self.lines:
-            # Hijack paragraph
-            para = Paragraph()
-            # Add big single run for line
-            para.append(Run(line))
+        for ind, line in enumerate(self.lines):
+            # Line number in bold and rest of line
+            run_line = Run(str(ind + 1).rjust(just), False, True)
+            run_code = Run(" " + line)
+            # Hijack paragraph and add big single run
+            para = Paragraph([run_line, run_code])
             # Submit to docx
             docx_para = para._docx(docx_doc)
-            # Change style of submitted
-            docx_para.style = STYLE_CODE
+            code_style(docx_para)
+
+        # Add empty line because formatting goes weird
+        para = Paragraph([])
+        docx_para = para._docx(docx_doc)
+        code_style(docx_para)
 
 
 class Document:
@@ -183,11 +202,9 @@ class Document:
         FONT_BODY = "IBM Plex Serif"
         FONT_CODE = "IBM Plex Mono"
 
-        print(docx_doc)
-
         # Replace all fonts with body font by default
         for style in docx_doc.styles:
-            if hasattr(style,"font"):
+            if hasattr(style, "font"):
                 style.font.name = FONT_BODY
 
         # Styling for title
@@ -226,6 +243,7 @@ class Document:
         # Styling for codeblocks
         style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
         style_codeblock.font.name = FONT_CODE
+        style_codeblock.paragraph_format.line_spacing = 0.4
 
         # Add title/subtitle
         if self.title or self.subtitle:
