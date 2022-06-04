@@ -9,10 +9,19 @@ This is a small testing document to make sure that my module works. Here's a quo
 
 This sentence was written on the 3rd of June, 2022 and hasn't yet been modified. That's all I have to say about that. The next sections are taken and lightly modified from the documentation website I used to create this module, have fun!
 
+## Lists
+
 Make sure you do have these though:
 
 - Bullet point should work
 - List points don't work yet
+
+This document should also work with numbered lists, like the ones shown here:
+
+1. This should work
+2. Because I said it should
+    1. Even some indentation should work ideally
+3. That's the end of this, make sure levelling works
 
 # Working with Styles
 

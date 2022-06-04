@@ -2,7 +2,7 @@ from pathlib import Path
 import docx
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
-from docx.shared import RGBColor, Pt
+from docx.shared import RGBColor, Pt, Cm
 
 STYLE_CODE = "Code"
 
@@ -168,7 +168,7 @@ class Quote(Paragraph):
         # Reset to quote styling
         para.style = "Quote"
         para.alignment = 0
-        # TODO: quote level indent
+        para.paragraph_format.left_indent = Cm(0.75)
         return para
 
 
@@ -196,7 +196,39 @@ class PointBullet(Paragraph):
         # Set bullet style according to level
         docx_para.style = (
             "List Bullet" if self.level == 0 else f"List Bullet {self.level}"
-        ) # TODO: fix bullet points being weird
+        )  # TODO: fix bullet points being weird
+        return docx_para
+
+
+class PointNumbered(Paragraph):
+    """Numbered point with content inside of it"""
+
+    @staticmethod
+    def _md(line: str):
+        # Level info
+        level, line = _level_info(line)
+        # Get number and clean
+        splitted = line.split(".", 1)
+        num = int(splitted[0])
+        line = splitted[1].lstrip()
+        # Parse via inheritance and convert
+        para = super(PointNumbered, PointNumbered)._md(
+            line
+        )  # BODGE: python doesn't like staticmethod and inheritance
+        numbered = PointNumbered(para.runs)
+        # Set info
+        numbered.level = level
+        numbered.num = num
+        return numbered
+
+    def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
+        # TODO: use something like "start at self.num" so markdown starting at like `20.` can be used
+        # Get inherited generated paragraph
+        docx_para = super()._docx(docx_doc)
+        # Set bullet style according to level
+        docx_para.style = (
+            "List Number" if self.level == 0 else f"List Number {self.level}"
+        )  # TODO: fix bullet points being weird
         return docx_para
 
 
@@ -240,10 +272,17 @@ class Document:
                 # Bullet point
                 self.elements.append(PointBullet._md(line))
             else:
-                # Paragraph
-                self.elements.append(Paragraph._md(stripped))
+                # Check misc
+                try:
+                    # Numbered point
+                    if "." not in stripped:
+                        raise Exception()
+                    int(stripped.split(".", 1)[0])
+                    self.elements.append(PointNumbered._md(line))
+                except:
+                    # Paragraph
+                    self.elements.append(Paragraph._md(stripped))
 
-            # TODO: numbered point, make sure to pipe in stock `line` after detection
             # TODO: image
 
             # Move to next line
@@ -302,6 +341,12 @@ class Document:
         style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
         style_codeblock.font.name = FONT_CODE
         style_codeblock.paragraph_format.line_spacing = 0.4
+
+        # Styling for bullet points
+        # TODO: left_indent and -2px vert align for bullet points
+
+        # Styling for numbered points
+        # TODO: left_indent for numbered points
 
         # Add title/subtitle
         if self.title or self.subtitle:
