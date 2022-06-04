@@ -91,7 +91,15 @@ A style can also be applied at creation time using either the style object or it
 ```
 """
 
-doc = Document(md)
-doc.title = "Hello, World!"
-doc.subtitle = "Example Document"
-doc.save("test.docx")
+
+def run():
+    doc = Document(md)
+    doc.title = "Hello, World!"
+    doc.subtitle = "Example Document"
+    doc.save("test.docx")
+
+
+if __name__ == "__main__":
+    print("Running test")
+    run()
+    print("Completed test")

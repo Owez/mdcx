@@ -41,7 +41,6 @@ class Run:
         # Check that run is a string; python doesn't have strong typing sadly
         if type(text) != str:
             raise Exception("Make sure this run is a string, this is a common mistake")
-
         # Create tuns
         self.text = text
         self.bold = bold
