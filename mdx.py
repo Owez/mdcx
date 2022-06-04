@@ -156,10 +156,10 @@ class Quote(Paragraph):
 
     @staticmethod
     def _md(line: str):
-        # Get levelling information
-        level = 0  # TODO: quote levelling information
+        # Level info
+        level, line = _level_info(line)
         # Clean line from `>` starter
-        line = line.lstrip()[1:].lstrip()
+        line = line[1:].lstrip()
         # Parse via inheritance and convert
         para = super(Quote, Quote)._md(
             line
@@ -184,10 +184,10 @@ class PointBullet(Paragraph):
 
     @staticmethod
     def _md(line: str):
-        # Get levelling information
-        level = 0  # TODO: quote levelling information
+        # Level info
+        level, line = _level_info(line)
         # Clean line from `-` starter
-        line = line.lstrip()[1:].lstrip()
+        line = line[1:].lstrip()
         # Parse via inheritance and convert
         para = super(PointBullet, PointBullet)._md(
             line
@@ -250,7 +250,6 @@ class Document:
                 # Paragraph
                 self.elements.append(Paragraph._md(stripped))
 
-            # TODO: bullet point, make sure to pipe in stock `line` after detection
             # TODO: numbered point, make sure to pipe in stock `line` after detection
             # TODO: image
 
@@ -346,3 +345,11 @@ def _style_title_border(style_title):
     This is a hack because there's no programmatic way to do this as of writing"""
     el = style_title._element
     el.remove(el.xpath("w:pPr")[0])
+
+
+def _level_info(line: str) -> tuple:
+    """Figures out level information and returns it and the line without spacing"""
+    stripped = line.lstrip()
+    num = len(line) - len(stripped)
+    level = int(num / 2)
+    return (level, stripped)
