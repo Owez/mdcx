@@ -158,14 +158,13 @@ class Quote(Paragraph):
     def _md(line: str):
         # Get levelling information
         level = 0  # TODO: quote levelling information
-        # Clean line from > starter
+        # Clean line from `>` starter
         line = line.lstrip()[1:].lstrip()
-        # Parse line using inheritance
-        para = super(Quote, Quote)._md(line)
-        # Convert para to quite
-        quote = Quote(
-            para.runs
+        # Parse via inheritance and convert
+        para = super(Quote, Quote)._md(
+            line
         )  # BODGE: python doesn't like staticmethod and inheritance
+        quote = Quote(para.runs)
         # Set levelling
         quote.level = level
         return quote
@@ -178,6 +177,34 @@ class Quote(Paragraph):
         para.alignment = 0
         # TODO: quote level indent
         return para
+
+
+class PointBullet(Paragraph):
+    """Bullet point with content inside of it"""
+
+    @staticmethod
+    def _md(line: str):
+        # Get levelling information
+        level = 0  # TODO: quote levelling information
+        # Clean line from `-` starter
+        line = line.lstrip()[1:].lstrip()
+        # Parse via inheritance and convert
+        para = super(PointBullet, PointBullet)._md(
+            line
+        )  # BODGE: python doesn't like staticmethod and inheritance
+        bullet = PointBullet(para.runs)
+        # Set levelling
+        bullet.level = level
+        return bullet
+
+    def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
+        # Get inherited generated paragraph
+        docx_para = super()._docx(docx_doc)
+        # Set bullet style according to level
+        docx_para.style = (
+            "List Bullet" if self.level == 0 else f"List Bullet {self.level}"
+        )
+        return docx_para
 
 
 class Document:
@@ -216,6 +243,9 @@ class Document:
             elif stripped.startswith(">"):
                 # Quote
                 self.elements.append(Quote._md(line))
+            elif stripped.startswith("-"):
+                # Bullet point
+                self.elements.append(PointBullet._md(line))
             else:
                 # Paragraph
                 self.elements.append(Paragraph._md(stripped))

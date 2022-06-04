@@ -7,7 +7,12 @@ This is a small testing document to make sure that my module works. Here's a quo
 
 > This is a quote which should have the same formatting as the line above.
 
-This sentence was written on the 3rd of June, 2022 and hasn't yet been modified. That's all I have to say about that. The next sections are taken and lightly modified from the documentation website I used to create this module, have fun!s
+This sentence was written on the 3rd of June, 2022 and hasn't yet been modified. That's all I have to say about that. The next sections are taken and lightly modified from the documentation website I used to create this module, have fun!
+
+Make sure you do have these though:
+
+- Bullet point should work
+- List points don't work yet
 
 # Working with Styles
 
