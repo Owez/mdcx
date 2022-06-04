@@ -1,9 +1,8 @@
 from pathlib import Path
-from pydoc import doc
 import docx
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
-from docx.shared import RGBColor, Pt, Inches
+from docx.shared import RGBColor, Pt
 
 STYLE_CODE = "Code"
 
@@ -124,11 +123,6 @@ class Codeblock:
         return (Codeblock(code, lang), skip)
 
     def _docx(self, docx_doc: docx.Document):
-        def code_style(docx_para):
-            """Restyles code from in-paragraph styling"""
-            docx_para.style = STYLE_CODE
-            docx_para.alignment = 0
-
         # Calculate justification for lines
         just = len(str(len(self.lines)))
         # Add lines
@@ -203,7 +197,7 @@ class PointBullet(Paragraph):
         # Set bullet style according to level
         docx_para.style = (
             "List Bullet" if self.level == 0 else f"List Bullet {self.level}"
-        )
+        ) # TODO: fix bullet points being weird
         return docx_para
 
 
