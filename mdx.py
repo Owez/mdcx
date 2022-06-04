@@ -298,6 +298,35 @@ class Document:
         FONT_BODY = "IBM Plex Serif"
         FONT_CODE = "IBM Plex Mono"
 
+        # New styles
+        style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
+
+        # Add title/subtitle
+        if self.title or self.subtitle:
+            # Create empty lines before title
+            for _ in range(3):
+                para = Paragraph([Run("")])
+                para._docx(docx_doc)
+
+            # Add title
+            if self.title:
+                docx_para = docx_doc.add_heading(self.title, 0)
+                docx_para.alignment = 1
+            # Add subtitle
+            if self.subtitle:
+                docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
+                docx_para.style = "Subtitle"
+                docx_para.alignment = 1
+
+            # Page break
+            docx_para = docx_doc.add_paragraph()
+            docx_run = docx_para.add_run()
+            docx_run.add_break(WD_BREAK.PAGE)
+
+        # Add elements
+        for element in self.elements:
+            element._docx(docx_doc)
+
         # Replace all fonts with body font by default
         for style in docx_doc.styles:
             if hasattr(style, "font"):
@@ -338,7 +367,6 @@ class Document:
         style_paragraph.font.size = Pt(12)
 
         # Styling for codeblocks
-        style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
         style_codeblock.font.name = FONT_CODE
         style_codeblock.paragraph_format.line_spacing = 0.4
 
@@ -347,32 +375,6 @@ class Document:
 
         # Styling for numbered points
         # TODO: left_indent for numbered points
-
-        # Add title/subtitle
-        if self.title or self.subtitle:
-            # Create empty lines before title
-            for _ in range(3):
-                para = Paragraph([Run("")])
-                para._docx(docx_doc)
-
-            # Add title
-            if self.title:
-                docx_para = docx_doc.add_heading(self.title, 0)
-                docx_para.alignment = 1
-            # Add subtitle
-            if self.subtitle:
-                docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
-                docx_para.style = "Subtitle"
-                docx_para.alignment = 1
-
-            # Page break
-            docx_para = docx_doc.add_paragraph()
-            docx_run = docx_para.add_run()
-            docx_run.add_break(WD_BREAK.PAGE)
-
-        # Add elements
-        for element in self.elements:
-            element._docx(docx_doc)
 
         # Use docx's vanilla save
         docx_doc.save(path)
