@@ -235,11 +235,19 @@ class PointNumbered(Paragraph):
 class Document:
     """High-level document abstractions for conversion"""
 
+    FONT_HEADING = "IBM Plex Sans"
+    FONT_BODY = "IBM Plex Serif"
+    FONT_CODE = "IBM Plex Mono"
+
     elements = []
     title = None
     subtitle = None
 
-    def __init__(self, md: str):
+    def __init__(self, md: str, arial: bool = False):
+        # Set arial font
+        if arial:
+            self._arial()
+
         # Get and clear up lines
         lines_raw = md.splitlines()
         lines = []
@@ -249,6 +257,29 @@ class Document:
             # Append only non-empty lines
             if line != "":
                 lines.append(line)
+
+        # Metadata
+        if len(lines) > 1 and lines[0] == "---":
+            # Go over lines in metadata
+            for line in lines[1:]:
+                # Stop metadata if it's ended
+                if line == "---":
+                    break
+                # Split at `:` token
+                splitted = line.split(":", 1)
+                # Go to next line if its invalid
+                if len(splitted) != 2:
+                    continue
+                # Clean left and right sections
+                left = splitted[0].lstrip().lower()
+                right = splitted[1].lstrip()
+                # Match left section
+                if left == "title":
+                    self.title = right
+                elif left == "subtitle":
+                    self.subtitle = right
+
+        # TODO: get title/subtitle from metadata
 
         # Parse through lines
         ind = 0
@@ -288,15 +319,17 @@ class Document:
             # Move to next line
             ind += 1
 
+    def _arial(self):
+        """Sets all fonts to Arial if you can't support IBM Plex"""
+
+        self.FONT_HEADING = "Arial"
+        self.FONT_BODY = "Arial"
+        # TODO: codeblock non-plex, it goes weird without plex
+
     def save(self, path: Path):
         """Saves document to `path` provided"""
         # Create docx file
         docx_doc = docx.Document()
-
-        # Fonts
-        FONT_HEADING = "IBM Plex Sans"
-        FONT_BODY = "IBM Plex Serif"
-        FONT_CODE = "IBM Plex Mono"
 
         # New styles
         style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
@@ -304,7 +337,7 @@ class Document:
         # Add title/subtitle
         if self.title or self.subtitle:
             # Create empty lines before title
-            for _ in range(3):
+            for _ in range(4):
                 para = Paragraph([Run("")])
                 para._docx(docx_doc)
 
@@ -330,19 +363,19 @@ class Document:
         # Replace all fonts with body font by default
         for style in docx_doc.styles:
             if hasattr(style, "font"):
-                style.font.name = FONT_BODY
+                style.font.name = self.FONT_BODY
 
         # Styling for title
         style_title = docx_doc.styles["Title"]
         _style_title_border(style_title)
-        style_title.font.name = FONT_HEADING
+        style_title.font.name = self.FONT_HEADING
         style_title.font.size = Pt(26)
         style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_title.paragraph_format.space_after = Pt(3)
 
         # Styling for subtitle
         style_subtitle = docx_doc.styles["Subtitle"]
-        style_subtitle.font.name = FONT_HEADING
+        style_subtitle.font.name = self.FONT_HEADING
         style_subtitle.font.size = Pt(14)
         style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_subtitle.font.italic = False
@@ -350,7 +383,7 @@ class Document:
         # Styling for headings
         for h in range(1, 9):
             style_heading = docx_doc.styles[f"Heading {h}"]
-            style_heading.font.name = FONT_HEADING
+            style_heading.font.name = self.FONT_HEADING
             style_heading.font.bold = False
             style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
@@ -367,7 +400,7 @@ class Document:
         style_paragraph.font.size = Pt(12)
 
         # Styling for codeblocks
-        style_codeblock.font.name = FONT_CODE
+        style_codeblock.font.name = self.FONT_CODE
         style_codeblock.paragraph_format.line_spacing = 0.4
 
         # Styling for bullet points
