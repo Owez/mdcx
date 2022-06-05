@@ -88,7 +88,7 @@ class Paragraph:
         for run in self.runs:
             run._docx(docx_para)
         # Justify text
-        docx_para.alignment = 3
+        docx_para.alignment = 3  # TODO: integrate into paragraph style
         return docx_para
 
 
@@ -167,7 +167,7 @@ class Quote(Paragraph):
         para = super()._docx(docx_doc)
         # Reset to quote styling
         para.style = "Quote"
-        para.alignment = 0
+        para.alignment = 0  # TODO: integrate into quote style
         para.paragraph_format.left_indent = Cm(0.75)
         return para
 
@@ -261,9 +261,11 @@ class Document:
         # Metadata
         if len(lines) > 1 and lines[0] == "---":
             # Go over lines in metadata
-            for line in lines[1:]:
+            skip = 0
+            for ind, line in enumerate(lines[1:]):
                 # Stop metadata if it's ended
                 if line == "---":
+                    skip = ind + 1
                     break
                 # Split at `:` token
                 splitted = line.split(":", 1)
@@ -278,6 +280,9 @@ class Document:
                     self.title = right
                 elif left == "subtitle":
                     self.subtitle = right
+            # Skip to end of metadata if there was an open and close tag
+            if skip != 0:
+                lines = lines[1 + skip :]
 
         # TODO: get title/subtitle from metadata
 
@@ -344,12 +349,12 @@ class Document:
             # Add title
             if self.title:
                 docx_para = docx_doc.add_heading(self.title, 0)
-                docx_para.alignment = 1
+                docx_para.alignment = 1  # TODO: integrate into title style
             # Add subtitle
             if self.subtitle:
                 docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
                 docx_para.style = "Subtitle"
-                docx_para.alignment = 1
+                docx_para.alignment = 1  # TODO: integrate into subtitle style
 
             # Page break
             docx_para = docx_doc.add_paragraph()
