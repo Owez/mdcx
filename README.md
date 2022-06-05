@@ -4,6 +4,14 @@ Seemless markdown to docx converter
 
 ## Example
 
+Command-line:
+
+```shell
+$ mdx hippo.md hippo.docx
+```
+
+In Python:
+
 ```python
 from mdx import Document
 
