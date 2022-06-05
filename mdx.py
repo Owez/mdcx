@@ -3,6 +3,7 @@ import docx
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
 from docx.shared import RGBColor, Pt, Cm
+import sys
 
 STYLE_CODE = "Code"
 
@@ -431,3 +432,32 @@ def _level_info(line: str) -> tuple:
     num = len(line) - len(stripped)
     level = int(num / 2)
     return (level, stripped)
+
+
+def err_exit(msg: str):
+    """Prints error message to console and exits program, used for command-line"""
+    print(f"Error: {msg}")
+    sys.exit(1)
+
+
+# Command-line
+if __name__ == "__main__":
+    # Get and clean arguments
+    args = sys.argv[1:]
+    # Make sure theres at least an input and output
+    if len(args) < 2:
+        err_exit("Please provide input and output files")
+    # Get arial setting
+    arial = "--arial" in args[2:]
+    # Get markdown from file
+    md = ""
+    try:
+        with open(args[0], "r") as file:
+            md = file.read()
+    except Exception as e:
+        err_exit(f"Invalid file, {e}")
+    # Create and save document to defined parts
+    try:
+        Document(md, arial).save(args[1])
+    except:
+        err_exit("Couldn't convert document")  # TODO: better errors

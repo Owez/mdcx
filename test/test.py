@@ -13,6 +13,8 @@ def run():
     doc.subtitle = "Unit 14 Assignment 1"
     doc.save("test.docx")
 
+    # TODO: test command-line
+
 
 if __name__ == "__main__":
     print("Running test")
