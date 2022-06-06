@@ -88,8 +88,6 @@ class Paragraph:
         # Add runs to paragraph
         for run in self.runs:
             run._docx(docx_para)
-        # Justify text
-        docx_para.alignment = 3  # TODO: integrate into paragraph style
         return docx_para
 
 
@@ -168,7 +166,6 @@ class Quote(Paragraph):
         para = super()._docx(docx_doc)
         # Reset to quote styling
         para.style = "Quote"
-        para.alignment = 0  # TODO: integrate into quote style
         para.paragraph_format.left_indent = Cm(0.75)
         return para
 
@@ -197,7 +194,7 @@ class PointBullet(Paragraph):
         # Set bullet style according to level
         docx_para.style = (
             "List Bullet" if self.level == 0 else f"List Bullet {self.level}"
-        )  # TODO: fix bullet points being weird
+        )  # TODO: fix bullet points being weird; need to change all fonts better?
         return docx_para
 
 
@@ -223,13 +220,13 @@ class PointNumbered(Paragraph):
         return numbered
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
-        # TODO: use something like "start at self.num" so markdown starting at like `20.` can be used
+        # TODO: use something like "start at self.num" so markdown starting at like `20.` can be used, it fucks up otherwise
         # Get inherited generated paragraph
         docx_para = super()._docx(docx_doc)
         # Set bullet style according to level
         docx_para.style = (
             "List Number" if self.level == 0 else f"List Number {self.level}"
-        )  # TODO: fix bullet points being weird
+        )
         return docx_para
 
 
@@ -285,8 +282,6 @@ class Document:
             if skip != 0:
                 lines = lines[1 + skip :]
 
-        # TODO: get title/subtitle from metadata
-
         # Parse through lines
         ind = 0
         while ind < len(lines):
@@ -320,7 +315,7 @@ class Document:
                     # Paragraph
                     self.elements.append(Paragraph._md(stripped))
 
-            # TODO: image
+            # TODO: images
 
             # Move to next line
             ind += 1
@@ -350,12 +345,10 @@ class Document:
             # Add title
             if self.title:
                 docx_para = docx_doc.add_heading(self.title, 0)
-                docx_para.alignment = 1  # TODO: integrate into title style
             # Add subtitle
             if self.subtitle:
                 docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
                 docx_para.style = "Subtitle"
-                docx_para.alignment = 1  # TODO: integrate into subtitle style
 
             # Page break
             docx_para = docx_doc.add_paragraph()
@@ -378,6 +371,7 @@ class Document:
         style_title.font.size = Pt(26)
         style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_title.paragraph_format.space_after = Pt(3)
+        style_title.paragraph_format.alignment = 1
 
         # Styling for subtitle
         style_subtitle = docx_doc.styles["Subtitle"]
@@ -385,6 +379,7 @@ class Document:
         style_subtitle.font.size = Pt(14)
         style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_subtitle.font.italic = False
+        style_subtitle.paragraph_format.alignment = 1
 
         # Styling for headings
         for h in range(1, 9):
@@ -404,6 +399,7 @@ class Document:
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
         style_paragraph.font.size = Pt(12)
+        style_paragraph.paragraph_format.alignment = 3
 
         # Styling for codeblocks
         style_codeblock.font.name = self.FONT_CODE
