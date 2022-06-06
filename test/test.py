@@ -8,10 +8,7 @@ md = open("test.md", "r").read()
 
 
 def run():
-    doc = Document(md)
-    doc.title = "Programming Constructs"
-    doc.subtitle = "Unit 14 Assignment 1"
-    doc.save("test.docx")
+    Document(md).save("test.docx")
 
     # TODO: test command-line
 

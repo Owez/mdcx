@@ -431,7 +431,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     # Make sure theres at least an input and output or show help
     if len(args) < 2:
-        err_exit("Please provide input and output files")
+        err_exit("Please provide [in] and [out] files")
     elif "--help" in args[2:]:
         print(CLI_HELP)
         sys.exit(0)
