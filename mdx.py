@@ -354,12 +354,12 @@ class Document:
         # Replace all fonts with body font by default
         for style in docx_doc.styles:
             if hasattr(style, "font"):
-                style.font.name = self.FONT_BODY if self.andy else "Arial"
+                style.font.name = self.FONT_BODY if not self.andy else "Arial"
 
         # Styling for title
         style_title = docx_doc.styles["Title"]
         _style_title_border(style_title)
-        style_title.font.name = self.FONT_HEADING if self.andy else "Arial"
+        style_title.font.name = self.FONT_HEADING if not self.andy else "Arial"
         style_title.font.size = Pt(26)
         style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_title.paragraph_format.space_after = Pt(3)
@@ -367,7 +367,7 @@ class Document:
 
         # Styling for subtitle
         style_subtitle = docx_doc.styles["Subtitle"]
-        style_subtitle.font.name = self.FONT_HEADING if self.andy else "Arial"
+        style_subtitle.font.name = self.FONT_HEADING if not self.andy else "Arial"
         style_subtitle.font.size = Pt(14)
         style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_subtitle.font.italic = False
@@ -376,23 +376,28 @@ class Document:
         # Styling for headings
         for h in range(1, 9):
             style_heading = docx_doc.styles[f"Heading {h}"]
-            style_heading.font.name = self.FONT_HEADING if self.andy else "Arial"
-            style_heading.font.bold = False
+            style_heading.font.name = self.FONT_HEADING if not self.andy else "Arial"
+            style_heading.font.bold = self.andy
             style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
+            # Per-level styling
             if h == 1:
                 style_heading.font.size = Pt(22)
                 style_heading.paragraph_format.space_after = Pt(2)
             elif h == 2:
                 style_heading.font.size = Pt(17)
-            elif h == 3:
+            elif h <= 4:
                 style_heading.font.size = Pt(13)
+            # Italics for small headings
+            if h > 3:
+                style_heading.font.italic = True
 
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
         style_paragraph.paragraph_format.alignment = 3
         if self.andy:
             style_paragraph.font.size = Pt(12)
+            style_paragraph.paragraph_format.line_spacing = 1.5
 
         # Styling for codeblocks
         style_codeblock.font.name = (

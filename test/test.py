@@ -4,12 +4,18 @@ sys.path.append("..")
 
 from mdx import Document
 
-md = open("test.md", "r").read()
-
 
 def run():
-    Document(md).save("test.docx")
+    # In Python
+    md = open("test.md", "r").read()
+    doc = Document(md)
+    doc.save("test.docx")
 
+    # In Python (andy)
+    doc.andy = True
+    doc.save("test_andy.docx")
+
+    # Command-line
     # TODO: test command-line
 
 
