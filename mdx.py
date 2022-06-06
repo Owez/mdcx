@@ -6,7 +6,7 @@ from docx.shared import RGBColor, Pt, Cm
 import sys
 
 STYLE_CODE = "Code"
-
+CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate document format"
 
 class Heading:
     """Heading section inside document"""
@@ -398,7 +398,6 @@ class Document:
 
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
-        style_paragraph.font.size = Pt(12)
         style_paragraph.paragraph_format.alignment = 3
 
         # Styling for codeblocks
@@ -432,7 +431,7 @@ def _level_info(line: str) -> tuple:
 
 def err_exit(msg: str):
     """Prints error message to console and exits program, used for command-line"""
-    print(f"Error: {msg}")
+    print(f"{CLI_HELP}\n\nError: {msg}", file=sys.stderr)
     sys.exit(1)
 
 
@@ -440,11 +439,14 @@ def err_exit(msg: str):
 if __name__ == "__main__":
     # Get and clean arguments
     args = sys.argv[1:]
-    # Make sure theres at least an input and output
+    # Make sure theres at least an input and output or show help
     if len(args) < 2:
         err_exit("Please provide input and output files")
-    # Get arial setting
-    arial = "--arial" in args[2:]
+    elif "--help" in args[2:]:
+        print(CLI_HELP)
+        sys.exit(0)
+    # Get andy setting
+    andy = "--andy" in args[2:]
     # Get markdown from file
     md = ""
     try:
@@ -454,6 +456,6 @@ if __name__ == "__main__":
         err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
     try:
-        Document(md, arial).save(args[1])
+        Document(md, andy).save(args[1])
     except:
         err_exit("Couldn't convert document")  # TODO: better errors
