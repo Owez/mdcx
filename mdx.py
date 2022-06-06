@@ -6,7 +6,7 @@ from docx.shared import RGBColor, Pt, Cm
 import sys
 
 STYLE_CODE = "Code"
-CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate document format"
+CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate high-clarity document format"
 
 
 class Heading:
