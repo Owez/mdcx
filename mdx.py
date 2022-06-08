@@ -77,11 +77,40 @@ class Paragraph:
 
     @staticmethod
     def _md(line: str):
-        # Make new paragraph
-        para = Paragraph([])
         # Parse through runs
-        para.append(Run(line))  # TODO: actually parse runs
-        return para
+        runs = []
+        ind = 0
+        flipflop = False
+        bold = False
+        italic = False
+        buf = []
+        # Go through each character
+        while ind < len(line):
+            # Get character
+            c = line[ind]
+            # Bold/italics
+            if c == "*":
+                # Calculate flipflop
+                if flipflop:
+                    flipflop = False
+                    buf.append("*")
+                # Get star length
+                stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
+                # Italics if theres a non-even amount
+                if stars % 2 == 1:
+                    italic = not italic
+                # Bold if theres two or more
+                if stars > 1:
+                    bold = not bold
+                ind += stars - 1
+            # Links
+            pass  # TODOs
+
+            # Add to ind
+            ind += 1
+
+        # Create and return paragraph
+        return Paragraph(runs)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
         # Add empty paragraph
@@ -450,7 +479,7 @@ if __name__ == "__main__":
     except Exception as e:
         err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
-    try:
-        Document(md, andy).save(args[1])
-    except:
-        err_exit("Couldn't convert document")  # TODO: better errors
+    # try:
+    Document(md, andy).save(args[1])
+    # except:
+    # err_exit("Couldn't convert document")  # TODO: better errors
