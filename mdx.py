@@ -91,14 +91,14 @@ class Paragraph:
             c = line[ind]
             # Bold/italics
             if c == "*":
-                # Add previous buffer
-                runs.append(Run(buf,bold,italic))
-                buf = ""
                 # Calculate flipflop
                 add = flipflop
                 if flipflop:
                     flipflop = False
                     continue
+                # Add previous buffer
+                runs.append(Run(buf, bold, italic))
+                buf = ""
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
                 # Italics if theres a non-even amount
