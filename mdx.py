@@ -83,17 +83,22 @@ class Paragraph:
         flipflop = False
         bold = False
         italic = False
-        buf = []
+        buf = ""
+        add = True
         # Go through each character
         while ind < len(line):
             # Get character
             c = line[ind]
             # Bold/italics
             if c == "*":
+                # Add previous buffer
+                runs.append(Run(buf,bold,italic))
+                buf = ""
                 # Calculate flipflop
+                add = flipflop
                 if flipflop:
                     flipflop = False
-                    buf.append("*")
+                    continue
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
                 # Italics if theres a non-even amount
@@ -104,12 +109,16 @@ class Paragraph:
                     bold = not bold
                 ind += stars - 1
             # Links
-            pass  # TODOs
-
-            # Add to ind
+            pass  # TODO; regex: \[[^\]]*\]\([^\)]*\)
+            # Add to ind/buf
+            if add:
+                buf += c
+            else:
+                add = True
             ind += 1
 
         # Create and return paragraph
+        runs.append(Run(buf, bold, italic))
         return Paragraph(runs)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
