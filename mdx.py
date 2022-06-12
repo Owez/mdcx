@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import docx
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
@@ -108,8 +109,11 @@ class Paragraph:
                 if stars > 1:
                     bold = not bold
                 ind += stars - 1
-            # Links
-            pass  # TODO; regex: \[[^\]]*\]\([^\)]*\)
+            # Heading link
+            match = re.search(" \[.*\]\(.*\)", line[ind:])  # TODO: better pattern
+            # TODO: parse match
+            # External link
+            # TODO
             # Add to ind/buf
             if add:
                 buf += c
@@ -283,8 +287,8 @@ class Document:
     def __init__(self, md: str, andy: bool = False):
         # Set andy format
         self.andy = andy
-        # Get and clear up lines
-        lines_raw = md.splitlines()
+        # Remove toc and clear up lines
+        lines_raw = _rm_toc(md)
         lines = []
         for line in lines_raw:
             # Strip anything from the rights
@@ -462,10 +466,40 @@ def _level_info(line: str) -> tuple:
     return (level, stripped)
 
 
-def err_exit(msg: str):
+def _err_exit(msg: str):
     """Prints error message to console and exits program, used for command-line"""
     print(f"{CLI_HELP}\n\nError: {msg}", file=sys.stderr)
     sys.exit(1)
+
+
+def _rm_toc(md: str) -> list:
+    """Removes first table of contents section from a markdown string, returning list of lines"""
+    # Don't check if there isn't one
+    check = md.lower()
+    if "table of contents" not in check and "contents" not in check:
+        return md
+    # Parse through
+    in_toc = False
+    keep = []
+    for line in md.splitlines():
+        clean = line.lstrip()
+        # Title, so either start/end toc removal
+        if clean.startswith("#"):
+            # Stop removing toc
+            if in_toc:
+                in_toc = False
+                keep.append(line)
+                break
+            # Start removing toc
+            title = clean.lstrip("#").strip().lower()
+            if title in ["table of contents", "contents"]:
+                in_toc = True
+            else:
+                keep.append(line)
+        # Add like normal
+        elif not in_toc:
+            keep.append(line)
+    return keep
 
 
 # Command-line
@@ -474,7 +508,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     # Make sure theres at least an input and output or show help
     if len(args) < 2:
-        err_exit("Please provide [in] and [out] files")
+        _err_exit("Please provide [in] and [out] files")
     elif "--help" in args[2:]:
         print(CLI_HELP)
         sys.exit(0)
@@ -486,7 +520,7 @@ if __name__ == "__main__":
         with open(args[0], "r") as file:
             md = file.read()
     except Exception as e:
-        err_exit(f"Invalid file, {e}")
+        _err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
     # try:
     Document(md, andy).save(args[1])
