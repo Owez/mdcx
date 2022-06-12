@@ -237,7 +237,7 @@ class PointBullet(Paragraph):
         # Set bullet style according to level
         docx_para.style = (
             "List Bullet" if self.level == 0 else f"List Bullet {self.level}"
-        )  # TODO: fix bullet points being weird; need to change all fonts better?
+        )  # TODO: fix `KeyError: "no style with name 'List Bullet 1'"`
         return docx_para
 
 
