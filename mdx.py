@@ -480,16 +480,17 @@ def _rm_toc(md: str) -> list:
         return md
     # Parse through
     in_toc = False
+    removed_toc = False
     keep = []
     for line in md.splitlines():
         clean = line.lstrip()
         # Title, so either start/end toc removal
-        if clean.startswith("#"):
+        if clean.startswith("#") and not removed_toc:
             # Stop removing toc
             if in_toc:
                 in_toc = False
                 keep.append(line)
-                break
+                continue
             # Start removing toc
             title = clean.lstrip("#").strip().lower()
             if title in ["table of contents", "contents"]:
