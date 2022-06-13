@@ -138,11 +138,11 @@ class Codeblock:
     """Codeblock containing language and monospaced code"""
 
     def __init__(
-        self, lines: list, lang: str = None,heading_after:bool=False
+        self, lines: list, lang: str = None, heading_after: bool = False
     ):  # TODO: use `lang` somewhere in docx
         self.lines = lines
         self.lang = lang
-        self.heading_after=heading_after
+        self.heading_after = heading_after
 
     @staticmethod
     def _md(lines: list) -> tuple:
@@ -151,14 +151,14 @@ class Codeblock:
             lines[0].lstrip()[3:].lstrip()
         )  # first `lstrip()` used in document parsing
         lang = lang if lang != "" else None
-        
+
         # Read lines
-        heading_after=False
+        heading_after = False
         code = []
         for ind, line in enumerate(lines[1:]):
             if line.lstrip() == "```":
                 # Check if there's a heading afterwards
-                if len(lines[1:]) > ind and lines[ind+2].lstrip().startswith("#"):
+                if len(lines[1:]) > ind and lines[ind + 2].lstrip().startswith("#"):
                     heading_after = True
                 # Stop codeblock
                 break
@@ -167,7 +167,7 @@ class Codeblock:
 
         # Get skip
         skip = len(code) + 1
-        return (Codeblock(code, lang,heading_after), skip)
+        return (Codeblock(code, lang, heading_after), skip)
 
     def _docx(self, docx_doc: docx.Document):
         # Calculate justification for lines
@@ -188,7 +188,7 @@ class Codeblock:
         # Add small codeblock line for formatting if there's not a heading afterwards
         if not self.heading_after:
             docx_para = docx_doc.add_paragraph()
-            docx_para.style=STYLE_CODE
+            docx_para.style = STYLE_CODE
 
 
 class Quote(Paragraph):
@@ -529,7 +529,7 @@ if __name__ == "__main__":
     except Exception as e:
         _err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
-    # try:
-    Document(md, andy).save(args[1])
-    # except:
-    # err_exit("Couldn't convert document")  # TODO: better errors
+    try:
+        Document(md, andy).save(args[1])
+    except:
+        _err_exit("Couldn't convert document")  # TODO: better errors
