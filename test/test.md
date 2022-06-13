@@ -135,7 +135,7 @@ if (z > x { /* this might run! */ }
 else if (true) { /* this might run if the other doesn’t! */ }
 ```
 
-Please note that the first line is the same as the previous example, it’s just formatted differently as you can use both //-style comments and /**/-style comments, depending on what you’re trying to write and convey. If the first if question does execute, the second else if question won’t even be tested, it will just skip everything else in the statement.
+Please note that the first line is the same as the previous example, it’s just formatted differently as you can use both `//`-style comments and `/**/`-style comments, depending on what you’re trying to write and convey. If the first if question does execute, the second else if question won’t even be tested, it will just skip everything else in the statement.
 
 The third and final part of an if statement is the else block. This part is quite simple as it doesn’t have a question to evaluate to see if it needs to run; instead only running if all the other questions evaluate to false; rendering nothing else available to run. For the completed example, this looks like the following:
 

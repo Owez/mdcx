@@ -138,10 +138,11 @@ class Codeblock:
     """Codeblock containing language and monospaced code"""
 
     def __init__(
-        self, lines: list, lang: str = None
+        self, lines: list, lang: str = None,heading_after:bool=False
     ):  # TODO: use `lang` somewhere in docx
         self.lines = lines
         self.lang = lang
+        self.heading_after=heading_after
 
     @staticmethod
     def _md(lines: list) -> tuple:
@@ -150,18 +151,23 @@ class Codeblock:
             lines[0].lstrip()[3:].lstrip()
         )  # first `lstrip()` used in document parsing
         lang = lang if lang != "" else None
-
+        
         # Read lines
+        heading_after=False
         code = []
-        for line in lines[1:]:
+        for ind, line in enumerate(lines[1:]):
             if line.lstrip() == "```":
+                # Check if there's a heading afterwards
+                if len(lines[1:]) > ind and lines[ind+2].lstrip().startswith("#"):
+                    heading_after = True
+                # Stop codeblock
                 break
             else:
                 code.append(line)
 
         # Get skip
         skip = len(code) + 1
-        return (Codeblock(code, lang), skip)
+        return (Codeblock(code, lang,heading_after), skip)
 
     def _docx(self, docx_doc: docx.Document):
         # Calculate justification for lines
@@ -179,11 +185,10 @@ class Codeblock:
             # Add actual code
             docx_para.add_run(" " + line)
 
-        # Add small codeblock line for formatting
-        # NOTE: could be it's own style for consistency
-        docx_para = docx_doc.add_paragraph()
-        docx_para.paragraph_format.space_after = Pt(0)
-        docx_para.paragraph_format.line_spacing = 0.7
+        # Add small codeblock line for formatting if there's not a heading afterwards
+        if not self.heading_after:
+            docx_para = docx_doc.add_paragraph()
+            docx_para.style=STYLE_CODE
 
 
 class Quote(Paragraph):
@@ -445,7 +450,8 @@ class Document:
         style_codeblock.font.name = (
             self.FONT_CODE
         )  # TODO: andy mono font; plex goes weird
-        style_codeblock.paragraph_format.line_spacing = 0.4
+        style_codeblock.paragraph_format.space_after = Pt(0)
+        style_codeblock.paragraph_format.line_spacing = 1
 
         # Use docx's vanilla save
         docx_doc.save(path)
@@ -508,8 +514,8 @@ if __name__ == "__main__":
     # Get and clean arguments
     args = sys.argv[1:]
     # Make sure theres at least an input and output or show help
-    if len(args) < 2:
-        _err_exit("Please provide [in] and [out] files")
+    if len(args) == 0:
+        _err_exit("Please provide [in]")
     elif "--help" in args[2:]:
         print(CLI_HELP)
         sys.exit(0)
