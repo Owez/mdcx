@@ -487,20 +487,23 @@ class Document:
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
         style_paragraph.paragraph_format.alignment = 3
-        if self.andy:
-            style_paragraph.font.size = Pt(12)
-            style_paragraph.paragraph_format.line_spacing = 1.5
-
-        # Styling for codeblocks
-        style_codeblock.font.name = self.font_code
-        style_codeblock.paragraph_format.space_after = Pt(0)
-        style_codeblock.paragraph_format.line_spacing = 1
+        style_paragraph.paragraph_format.line_spacing = 1.5
 
         # Styling for no spacing
         style_nospace = docx_doc.styles["No Spacing"]
         style_nospace.paragraph_format.alignment = (
             0  # shouldn't be justified but inherits from paragraph
         )
+
+        # Styling for paragraphs and no spacing
+        if self.andy:
+            for style in [style_paragraph, style_nospace]:
+                style.font.size = Pt(12)
+
+        # Styling for codeblocks
+        style_codeblock.font.name = self.font_code
+        style_codeblock.paragraph_format.space_after = Pt(0)
+        style_codeblock.paragraph_format.line_spacing = 1
 
         # Use docx's vanilla save
         docx_doc.save(path)
@@ -532,7 +535,7 @@ def _rm_toc(md: str) -> list:
     # Don't check if there isn't one
     check = md.lower()
     if "table of contents" not in check and "contents" not in check:
-        return md
+        return md.splitlines()
     # Parse through
     in_toc = False
     removed_toc = False
