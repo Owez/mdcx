@@ -7,24 +7,7 @@ subtitle: Unit 14 Assignment 1
 
 - [Table of Contents](#table-of-contents)
 - [Variables](#variables)
-  - [What's a Variable?](#whats-a-variable)
-  - [Examples](#examples)
-    - [Defining an Integer](#defining-an-integer)
-    - [Defining a String](#defining-a-string)
-    - [Defining a Float](#defining-a-float)
-    - [Defining a Boolean](#defining-a-boolean)
-- [Converting Datatypes](#converting-datatypes)
-- [Selection](#selection)
-- [Iteration](#iteration)
-  - [Introduction](#introduction)
-  - [For Loops](#for-loops)
-  - [Printing](#printing)
-  - [While Loops](#while-loops)
-- [Encapsulation](#encapsulation)
-  - [Functions](#functions)
-  - [Namespaces](#namespaces)
-  - [Procedural](#procedural)
-  - [References](#references)
+
 
 # Variables
 
@@ -38,7 +21,7 @@ Variables store data and variables are able to change, hence the name Variable. 
 
 ### Defining an Integer
 
-As we’re using C# for this basic programming tutorial, we will use the syntax of C#. The syntax of a programming language means how it looks and how its formatted, comparable to how Spanish or Czech has a ton of accents above letters, compared to English which evidently doesn’t. For the first example, let’s see how we define a variable:
+As we’re using [C#](https://hi.com) for this basic programming tutorial, we will use the syntax of C#. The syntax of a programming language means how it looks and how its formatted, comparable to how Spanish or Czech has a ton of accents above letters, compared to English which evidently doesn’t. For the first example, let’s see how we define a variable:
 
 ```
 int x = 1;

@@ -33,23 +33,19 @@ class Heading:
 class Run:
     """Run of text with styling located inside a paragraph"""
 
-    def __init__(
-        self,
-        text: str,
-        bold: bool = False,
-        italic: bool = False,
-        underline: bool = False,
-        strikethrough: bool = False,
-    ):
+    def __init__(self, text: str, **kwargs):
         # Check that run is a string; python doesn't have strong typing sadly
         if type(text) != str:
             raise Exception("Make sure this run is a string, this is a common mistake")
         # Create tuns
         self.text = text
-        self.bold = bold
-        self.italic = italic
-        self.underline = underline
-        self.strikethrough = strikethrough
+        self.bold = kwargs["bold"] if "bold" in kwargs else False
+        self.italic = kwargs["italic"] if "italic" in kwargs else False
+        self.underline = kwargs["underline"] if "underline" in kwargs else False
+        self.strikethrough = (
+            kwargs["strikethrough"] if "strikethrough" in kwargs else False
+        )
+        self.link = kwargs["link"] if "link" in kwargs else None
 
     def _docx(self, docx_para: docx.text.paragraph.Paragraph) -> docx.text.run.Run:
         # Add plain run text
@@ -63,6 +59,7 @@ class Run:
             docx_run.underline = True
         if self.strikethrough:
             docx_run.strikethrough = True
+        # TODO: link
         return docx_run
 
 
@@ -87,10 +84,12 @@ class Paragraph:
         italic = False
         buf = ""
         add = True
+
         # Go through each character
         while ind < len(line):
             # Get character
             c = line[ind]
+
             # Bold/italics
             if c == "*":
                 # Calculate flipflop
@@ -98,9 +97,10 @@ class Paragraph:
                 if flipflop:
                     flipflop = False
                     continue
-                # Add previous buffer
-                runs.append(Run(buf, bold, italic))
+                # Finish existing buffer
+                runs.append(Run(buf, bold=bold, italic=italic))
                 buf = ""
+                print(buf)
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
                 # Italics if theres a non-even amount
@@ -110,15 +110,30 @@ class Paragraph:
                 if stars > 1:
                     bold = not bold
                 ind += stars - 1
-            # Heading link
-            # match = re.search(
-            #     r"\[.*\]\([-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?\)",
-            #     line[ind:],
-            # )
-            # print(match.groups())
-            # TODO: parse match
-            # External link
-            # TODO
+
+            # Link (external or internal)
+            match = re.search(
+                r"^\[[^\]]*\]\([-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?\)",
+                line[ind:],
+            )
+            if match:
+                # Finish existing buffer and skip link
+                runs.append(Run(buf, bold=bold, italic=italic))
+                buf = ""
+                add = False
+                ind += len(match.group(0))
+                # Parse components
+                splitted = match.group(0).split("](", 1)
+                text = splitted[0][1:]  # TODO: parse text non-link styling
+                link = splitted[1][:-1].strip()
+                # Decide if it's external or internal
+                if link.startswith("#"):
+                    pass  # TODO: internal link
+                else:
+                    # NOTE: could include local uris as an automatic appendix :)
+                    pass  # TODO: external link
+                # TODO: add link as new run
+
             # Add to ind/buf
             if add:
                 buf += c
@@ -127,7 +142,7 @@ class Paragraph:
             ind += 1
 
         # Create paragraph and return
-        runs.append(Run(buf, bold, italic))
+        runs.append(Run(buf, bold=bold, italic=italic))
         return Paragraph(runs, no_spacing)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
@@ -563,7 +578,7 @@ if __name__ == "__main__":
     except Exception as e:
         _err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
-    try:
-        Document(md, andy).save(args[1])
-    except Exception as e:
-        _err_exit(f"Couldn't convert document; {e}")  # TODO: better errors
+    # try:
+    Document(md, andy).save(args[1])
+    # except Exception as e:
+    #     _err_exit(f"Couldn't convert document; {e}")  # TODO: better errors
