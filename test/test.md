@@ -24,6 +24,7 @@ subtitle: Unit 14 Assignment 1
   - [Functions](#functions)
   - [Namespaces](#namespaces)
   - [Procedural](#procedural)
+  - [References](#references)
 
 # Variables
 
@@ -275,3 +276,13 @@ The difference between the two is that object orientated programming groups bloc
 By doing this, it makes the categorisation of code simpler but it can have an impact with the quality and readability of the code, as you lose a way to group the code concisely in many cases. Because of this, both methodologies are used in conjunction as they derive from the same parent methodology and so naturally have a lot in common.
 
 <!-- TODO: more -->
+
+## References
+
+Griffiths O. (2022) *An Example Reference* [online]
+Available at: https://ogriffiths.com
+[Accessed: 14th June 2022]
+
+Griffiths O. (2021) *Another Example Reference* [online]
+Available at: https://ogriffiths.com/another
+[Accessed: 15th July 2022]

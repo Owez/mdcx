@@ -69,15 +69,16 @@ class Run:
 class Paragraph:
     """Paragraph consisting of many runs of text"""
 
-    def __init__(self, runs: list = []):
+    def __init__(self, runs: list = [], no_spacing: bool = False):
         self.runs = runs
+        self.no_spacing = no_spacing  # BODGE: shouldn't need to add docx context here
 
     def append(self, run: Run):
         """Appends new run to paragraph"""
         self.runs.append(run)
 
     @staticmethod
-    def _md(line: str):
+    def _md(line: str, no_spacing: bool = False):
         # Parse through runs
         runs = []
         ind = 0
@@ -125,13 +126,16 @@ class Paragraph:
                 add = True
             ind += 1
 
-        # Create and return paragraph
+        # Create paragraph and return
         runs.append(Run(buf, bold, italic))
-        return Paragraph(runs)
+        return Paragraph(runs, no_spacing)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
         # Add empty paragraph
         docx_para = docx_doc.add_paragraph()
+        # Make no-spaced if defined
+        if self.no_spacing:
+            docx_para.style = "No Spacing"
         # Add runs to paragraph
         for run in self.runs:
             run._docx(docx_para)
@@ -246,7 +250,7 @@ class PointBullet(Paragraph):
         # Set bullet style according to level
         docx_para.style = (
             "List Bullet" if self.level == 0 else f"List Bullet {self.level+1}"
-        )  # TODO: fix `KeyError: "no style with name 'List Bullet 1'"`
+        )
         return docx_para
 
 
@@ -307,13 +311,9 @@ class Document:
         lines_raw = _rm_toc(md)
         lines = []
         for line in lines_raw:
-            # Strip anything from the rights
-            line = line.rstrip()
-            # Append only non-empty lines
-            if line != "":
-                lines.append(line)
+            lines.append(line.rstrip())
 
-        # Metadata
+        # Metadata»
         if len(lines) > 1 and lines[0] == "---":
             # Go over lines in metadata
             skip = 0
@@ -341,6 +341,7 @@ class Document:
 
         # Parse through lines
         ind = 0
+        references = False
         while ind < len(lines):
             # Get line
             line = lines[ind]
@@ -348,7 +349,10 @@ class Document:
             # Check start
             if stripped.startswith("#"):
                 # Heading
-                self.elements.append(Heading._md(stripped))
+                heading = Heading._md(stripped)
+                self.elements.append(heading)
+                # Check if heading defines references
+                references = heading.text.lower() in ["bibiolography", "references"]
             elif stripped.startswith("```"):
                 # Codeblock
                 codeblock, skip = Codeblock._md(lines[ind:])
@@ -370,7 +374,22 @@ class Document:
                     self.elements.append(PointNumbered._md(line))
                 except:
                     # Paragraph
-                    self.elements.append(Paragraph._md(stripped))
+                    if (
+                        # Non-sensitive typical empty lines
+                        (not references and line == "")
+                        # Sensitive but last line was title
+                        or (references and lines[ind - 1].lstrip().startswith("#"))
+                        # Sensitive but next line is title
+                        or (
+                            references
+                            and len(lines) > ind + 1
+                            and lines[ind + 1].lstrip().startswith("#")
+                        )
+                    ):
+                        # Skip empty line
+                        ind += 1
+                        continue
+                    self.elements.append(Paragraph._md(stripped, references))
 
             # TODO: images
 
@@ -461,6 +480,12 @@ class Document:
         style_codeblock.font.name = self.font_code
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
+
+        # Styling for no spacing
+        style_nospace = docx_doc.styles["No Spacing"]
+        style_nospace.paragraph_format.alignment = (
+            0  # shouldn't be justified but inherits from paragraph
+        )
 
         # Use docx's vanilla save
         docx_doc.save(path)
