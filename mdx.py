@@ -110,7 +110,11 @@ class Paragraph:
                     bold = not bold
                 ind += stars - 1
             # Heading link
-            match = re.search(" \[.*\]\(.*\)", line[ind:])  # TODO: better pattern
+            # match = re.search(
+            #     r"\[.*\]\([-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?\)",
+            #     line[ind:],
+            # )
+            # print(match.groups())
             # TODO: parse match
             # External link
             # TODO
@@ -371,10 +375,6 @@ class Document:
         # Create docx file
         docx_doc = docx.Document()
 
-        for s in docx_doc.styles:
-            if "bullet" in s.name.lower():
-                print(s)
-
         # New styles
         style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
 
@@ -451,9 +451,7 @@ class Document:
             style_paragraph.paragraph_format.line_spacing = 1.5
 
         # Styling for codeblocks
-        style_codeblock.font.name = (
-            self.FONT_CODE
-        )  # TODO: andy mono font; plex goes weird
+        style_codeblock.font.name = self.FONT_CODE if not self.andy else "Lucida Sans Typewriter"
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
 
@@ -535,5 +533,5 @@ if __name__ == "__main__":
     # Create and save document to defined parts
     try:
         Document(md, andy).save(args[1])
-    except:
-        _err_exit("Couldn't convert document")  # TODO: better errors
+    except Exception as e:
+        _err_exit(f"Couldn't convert document; {e}")  # TODO: better errors
