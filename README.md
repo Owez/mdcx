@@ -38,7 +38,7 @@ Here are the upcoming features for the development of mdx:
   - [ ] Document for first public release
 - Quality-of-life
   - [x] Automatically remove Markdown TOCs
-  - [ ] Automatically make references/bibiolography no-spaced
+  - [ ] Good references/bibiolography styling (no-spaced, newline-aware)
   - [ ] Support `#` titles as well as the current yml titles
 
 This project isn't stable as not all basic markdown has been implemented. The hope for this project is to be able to seamlessly convert all well-formatted markdown to a docx.

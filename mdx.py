@@ -285,10 +285,12 @@ class PointNumbered(Paragraph):
 class Document:
     """High-level document abstractions for conversion"""
 
-    FONT_HEADING = "IBM Plex Sans"
-    FONT_BODY = "IBM Plex Serif"
-    FONT_CODE = "IBM Plex Mono"
+    # Default fonts (changes via andy setting)
+    font_heading = "IBM Plex Sans"
+    font_body = "IBM Plex Serif"
+    font_code = "IBM Plex Mono"
 
+    # Components
     elements = []
     title = None
     subtitle = None
@@ -296,6 +298,11 @@ class Document:
     def __init__(self, md: str, andy: bool = False):
         # Set andy format
         self.andy = andy
+        if self.andy:
+            self.font_heading = "Arial"
+            self.font_body = "Arial"
+            self.font_code = "Lucida Sans Typewriter"
+
         # Remove toc and clear up lines
         lines_raw = _rm_toc(md)
         lines = []
@@ -405,12 +412,12 @@ class Document:
         # Replace all fonts with body font by default
         for style in docx_doc.styles:
             if hasattr(style, "font"):
-                style.font.name = self.FONT_BODY if not self.andy else "Arial"
+                style.font.name = self.font_body
 
         # Styling for title
         style_title = docx_doc.styles["Title"]
         _style_title_border(style_title)
-        style_title.font.name = self.FONT_HEADING if not self.andy else "Arial"
+        style_title.font.name = self.font_heading
         style_title.font.size = Pt(26)
         style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_title.paragraph_format.space_after = Pt(3)
@@ -418,7 +425,7 @@ class Document:
 
         # Styling for subtitle
         style_subtitle = docx_doc.styles["Subtitle"]
-        style_subtitle.font.name = self.FONT_HEADING if not self.andy else "Arial"
+        style_subtitle.font.name = self.font_heading
         style_subtitle.font.size = Pt(14)
         style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_subtitle.font.italic = False
@@ -427,7 +434,7 @@ class Document:
         # Styling for headings
         for h in range(1, 9):
             style_heading = docx_doc.styles[f"Heading {h}"]
-            style_heading.font.name = self.FONT_HEADING if not self.andy else "Arial"
+            style_heading.font.name = self.font_heading
             style_heading.font.bold = self.andy
             style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
@@ -451,7 +458,7 @@ class Document:
             style_paragraph.paragraph_format.line_spacing = 1.5
 
         # Styling for codeblocks
-        style_codeblock.font.name = self.FONT_CODE if not self.andy else "Lucida Sans Typewriter"
+        style_codeblock.font.name = self.font_code
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
 
