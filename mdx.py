@@ -296,7 +296,7 @@ class PointNumbered(Paragraph):
         docx_para = super()._docx(docx_doc)
         # Set bullet style according to level
         docx_para.style = (
-            "List Number" if self.level == 0 else f"List Number {self.level}"
+            "List Number" if self.level == 0 else f"List Number {self.level+1}"
         )
         return docx_para
 
@@ -367,7 +367,7 @@ class Document:
                 heading = Heading._md(stripped)
                 self.elements.append(heading)
                 # Check if heading defines references
-                references = heading.text.lower() in ["bibiolography", "references"]
+                references = heading.text.lower() in ["bibliography", "references"]
             elif stripped.startswith("```"):
                 # Codeblock
                 codeblock, skip = Codeblock._md(lines[ind:])
@@ -487,7 +487,6 @@ class Document:
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
         style_paragraph.paragraph_format.alignment = 3
-        style_paragraph.paragraph_format.line_spacing = 1.5
 
         # Styling for no spacing
         style_nospace = docx_doc.styles["No Spacing"]
@@ -495,8 +494,9 @@ class Document:
             0  # shouldn't be justified but inherits from paragraph
         )
 
-        # Styling for paragraphs and no spacing
+        # Andy styling for paragraphs and no spacing
         if self.andy:
+            style_paragraph.paragraph_format.line_spacing = 1.5
             for style in [style_paragraph, style_nospace]:
                 style.font.size = Pt(12)
 
