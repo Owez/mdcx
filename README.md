@@ -34,6 +34,7 @@ Here are the upcoming features for the development of mdx:
 - Basics:
   - [ ] Links
   - [ ] Images
+  - [ ] Tables
   - [ ] Document for first public release
 - Quality-of-life
   - [x] Automatically remove Markdown TOCs

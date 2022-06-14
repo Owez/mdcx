@@ -241,7 +241,7 @@ class PointBullet(Paragraph):
         docx_para = super()._docx(docx_doc)
         # Set bullet style according to level
         docx_para.style = (
-            "List Bullet" if self.level == 0 else f"List Bullet {self.level}"
+            "List Bullet" if self.level == 0 else f"List Bullet {self.level+1}"
         )  # TODO: fix `KeyError: "no style with name 'List Bullet 1'"`
         return docx_para
 
@@ -370,6 +370,10 @@ class Document:
         """Saves document to `path` provided"""
         # Create docx file
         docx_doc = docx.Document()
+
+        for s in docx_doc.styles:
+            if "bullet" in s.name.lower():
+                print(s)
 
         # New styles
         style_codeblock = docx_doc.styles.add_style(STYLE_CODE, WD_STYLE_TYPE.PARAGRAPH)
