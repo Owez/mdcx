@@ -45,9 +45,20 @@ class Run:
         self.strikethrough = (
             kwargs["strikethrough"] if "strikethrough" in kwargs else False
         )
-        self.link = kwargs["link"] if "link" in kwargs else None
+        self.link = None
+        self.link_external = None
+        if "link" in kwargs:
+            self.link = kwargs["link"][0]
+            self.link_external = kwargs["link"][1]
 
     def _docx(self, docx_para: docx.text.paragraph.Paragraph) -> docx.text.run.Run:
+        # Act different if it's a link
+        if self.link is not None:
+            if self.link_external:
+                return _add_hyperlink(docx_para, self.link, self.text)
+            else:
+                pass  # TODO: internal link
+
         # Add plain run text
         docx_run = docx_para.add_run(self.text)
         # Add relevant styles
@@ -100,7 +111,6 @@ class Paragraph:
                 # Finish existing buffer
                 runs.append(Run(buf, bold=bold, italic=italic))
                 buf = ""
-                print(buf)
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
                 # Italics if theres a non-even amount
@@ -121,18 +131,20 @@ class Paragraph:
                 runs.append(Run(buf, bold=bold, italic=italic))
                 buf = ""
                 add = False
-                ind += len(match.group(0))
+                ind += len(match.group(0)) - 1
                 # Parse components
                 splitted = match.group(0).split("](", 1)
                 text = splitted[0][1:]  # TODO: parse text non-link styling
                 link = splitted[1][:-1].strip()
-                # Decide if it's external or internal
+                # Add link
                 if link.startswith("#"):
-                    pass  # TODO: internal link
+                    # Internal link
+                    runs.append(Run(text, link=(link[1:], False)))
                 else:
-                    # NOTE: could include local uris as an automatic appendix :)
-                    pass  # TODO: external link
-                # TODO: add link as new run
+                    # External link
+                    # TODO: parse markdown `text` rather than just making it raw text
+                    # TODO: include local uris as an automatic appendix :)
+                    runs.append(Run(text, link=(link, True)))
 
             # Add to ind/buf
             if add:
@@ -505,6 +517,8 @@ class Document:
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
 
+        # TODO: new "Link" run styling
+
         # Use docx's vanilla save
         docx_doc.save(path)
 
@@ -559,6 +573,37 @@ def _rm_toc(md: str) -> list:
         elif not in_toc:
             keep.append(line)
     return keep
+
+
+def _add_hyperlink(paragraph, url, text):
+    """Places a hyperlink within a paragraph object"""
+
+    # This gets access to the document.xml.rels file and gets a new relation id value
+    part = paragraph.part
+    r_id = part.relate_to(
+        url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True
+    )
+    # Create the w:hyperlink tag and add needed values
+    hyperlink = docx.oxml.shared.OxmlElement("w:hyperlink")
+    hyperlink.set(
+        docx.oxml.shared.qn("r:id"),
+        r_id,
+    )
+    # Create a w:r element
+    new_run = docx.oxml.shared.OxmlElement("w:r")
+    # Create a new w:rPr element
+    rPr = docx.oxml.shared.OxmlElement("w:rPr")
+    # Add link styling
+    rStyle = docx.oxml.shared.OxmlElement("w:pStyle")
+    rStyle.set(docx.oxml.shared.qn("w:val"), "Link")
+    rPr.append(rStyle)
+    # Join all the xml elements together add add the required text to the w:r element
+    new_run.append(rPr)
+    new_run.text = text
+    hyperlink.append(new_run)
+    # Add to paragraph
+    paragraph._p.append(hyperlink)
+    return hyperlink
 
 
 # Command-line
