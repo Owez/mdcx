@@ -1,3 +1,4 @@
+from copy import copy
 from pathlib import Path
 import re
 import docx
@@ -8,6 +9,40 @@ import sys
 
 STYLE_CODE = "Code"
 CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate high-clarity document format"
+
+
+class Context:
+    """Contextual information for compartmentalised converting"""
+
+    line = 0
+    heading = None
+    italic = False
+    bold = False
+    underline = False
+    strikethrough = False
+
+    def no_spacing(self) -> bool:
+        """Checks if elements should have spacing within the current section"""
+        if self.heading is None:
+            return False
+        return self.heading.text.lower() in ["bibliography", "references"]
+
+    def next_line(self):
+        """Skips to the next line"""
+        self.line += 1
+        self.char = 0
+        self.italic = False
+        self.bold = False
+        self.underline = False
+        self.strikethrough = False
+
+    def flip_italic(self):
+        """Flips italic value"""
+        self.italic = not self.italic
+
+    def flip_bold(self):
+        """Flips bold value"""
+        self.bold = not self.bold
 
 
 class Heading:
@@ -33,23 +68,18 @@ class Heading:
 class Run:
     """Run of text with styling located inside a paragraph"""
 
-    def __init__(self, text: str, **kwargs):
+    def __init__(self, ctx: Context, text: str, link: tuple = None):
         # Check that run is a string; python doesn't have strong typing sadly
         if type(text) != str:
             raise Exception("Make sure this run is a string, this is a common mistake")
         # Create tuns
+        self.ctx = ctx
         self.text = text
-        self.bold = kwargs["bold"] if "bold" in kwargs else False
-        self.italic = kwargs["italic"] if "italic" in kwargs else False
-        self.underline = kwargs["underline"] if "underline" in kwargs else False
-        self.strikethrough = (
-            kwargs["strikethrough"] if "strikethrough" in kwargs else False
-        )
         self.link = None
         self.link_external = None
-        if "link" in kwargs:
-            self.link = kwargs["link"][0]
-            self.link_external = kwargs["link"][1]
+        if link is not None:
+            self.link = link[0]
+            self.link_external = link[1]
 
     def _docx(self, docx_para: docx.text.paragraph.Paragraph) -> docx.text.run.Run:
         # Act different if it's a link
@@ -62,13 +92,13 @@ class Run:
         # Add plain run text
         docx_run = docx_para.add_run(self.text)
         # Add relevant styles
-        if self.bold:
+        if self.ctx.bold:
             docx_run.bold = True
-        if self.italic:
+        if self.ctx.italic:
             docx_run.italic = True
-        if self.underline:
+        if self.ctx.underline:
             docx_run.underline = True
-        if self.strikethrough:
+        if self.ctx.strikethrough:
             docx_run.strikethrough = True
         # TODO: link
         return docx_run
@@ -77,22 +107,20 @@ class Run:
 class Paragraph:
     """Paragraph consisting of many runs of text"""
 
-    def __init__(self, runs: list = [], no_spacing: bool = False):
+    def __init__(self, ctx: Context, runs: list = []):
+        self.ctx = ctx
         self.runs = runs
-        self.no_spacing = no_spacing  # BODGE: shouldn't need to add docx context here
 
     def append(self, run: Run):
         """Appends new run to paragraph"""
         self.runs.append(run)
 
     @staticmethod
-    def _md(line: str, no_spacing: bool = False):
+    def _md(ctx: Context, line: str):
         # Parse through runs
         runs = []
         ind = 0
         flipflop = False
-        bold = False
-        italic = False
         buf = ""
         add = True
 
@@ -109,16 +137,16 @@ class Paragraph:
                     flipflop = False
                     continue
                 # Finish existing buffer
-                runs.append(Run(buf, bold=bold, italic=italic))
+                runs.append(Run(copy(ctx), buf))
                 buf = ""
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
                 # Italics if theres a non-even amount
                 if stars % 2 == 1:
-                    italic = not italic
+                    ctx.flip_italic()
                 # Bold if theres two or more
                 if stars > 1:
-                    bold = not bold
+                    ctx.flip_bold()
                 ind += stars - 1
 
             # Link (external or internal)
@@ -128,23 +156,23 @@ class Paragraph:
             )
             if match:
                 # Finish existing buffer and skip link
-                runs.append(Run(buf, bold=bold, italic=italic))
+                runs.append(Run(copy(ctx), buf))
                 buf = ""
                 add = False
                 ind += len(match.group(0)) - 1
                 # Parse components
                 splitted = match.group(0).split("](", 1)
-                text = splitted[0][1:]  # TODO: parse text non-link styling
+                text = splitted[0][1:]
                 link = splitted[1][:-1].strip()
                 # Add link
                 if link.startswith("#"):
                     # Internal link
-                    runs.append(Run(text, link=(link[1:], False)))
+                    runs.append(Run(copy(ctx), text, link=(link[1:], False)))
                 else:
                     # External link
                     # TODO: parse markdown `text` rather than just making it raw text
                     # TODO: include local uris as an automatic appendix :)
-                    runs.append(Run(text, link=(link, True)))
+                    runs.append(Run(copy(ctx), text, link=(link, True)))
 
             # Add to ind/buf
             if add:
@@ -154,14 +182,14 @@ class Paragraph:
             ind += 1
 
         # Create paragraph and return
-        runs.append(Run(buf, bold=bold, italic=italic))
-        return Paragraph(runs, no_spacing)
+        runs.append(Run(copy(ctx), buf))
+        return Paragraph(ctx, runs)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
         # Add empty paragraph
         docx_para = docx_doc.add_paragraph()
         # Make no-spaced if defined
-        if self.no_spacing:
+        if self.ctx.no_spacing():
             docx_para.style = "No Spacing"
         # Add runs to paragraph
         for run in self.runs:
@@ -172,11 +200,9 @@ class Paragraph:
 class Codeblock:
     """Codeblock containing language and monospaced code"""
 
-    def __init__(
-        self, lines: list, lang: str = None, heading_after: bool = False
-    ):  # TODO: use `lang` somewhere in docx
+    def __init__(self, lines: list, lang: str = None, heading_after: bool = False):
         self.lines = lines
-        self.lang = lang
+        self.lang = lang  # TODO: use somewhere in docx
         self.heading_after = heading_after
 
     @staticmethod
@@ -230,16 +256,16 @@ class Quote(Paragraph):
     """Quote of something in it's own style"""
 
     @staticmethod
-    def _md(line: str):
+    def _md(ctx: Context, line: str):
         # Level info
         level, line = _level_info(line)
         # Clean line from `>` starter
         line = line[1:].lstrip()
         # Parse via inheritance and convert
         para = super(Quote, Quote)._md(
-            line
+            ctx, line
         )  # BODGE: python doesn't like staticmethod and inheritance
-        quote = Quote(para.runs)
+        quote = Quote(ctx, para.runs)
         # Set levelling
         quote.level = level
         return quote
@@ -257,16 +283,16 @@ class PointBullet(Paragraph):
     """Bullet point with content inside of it"""
 
     @staticmethod
-    def _md(line: str):
+    def _md(ctx: Context, line: str):
         # Level info
         level, line = _level_info(line)
         # Clean line from `-` starter
         line = line[1:].lstrip()
         # Parse via inheritance and convert
         para = super(PointBullet, PointBullet)._md(
-            line
+            ctx, line
         )  # BODGE: python doesn't like staticmethod and inheritance
-        bullet = PointBullet(para.runs)
+        bullet = PointBullet(ctx, para.runs)
         # Set levelling
         bullet.level = level
         return bullet
@@ -285,7 +311,7 @@ class PointNumbered(Paragraph):
     """Numbered point with content inside of it"""
 
     @staticmethod
-    def _md(line: str):
+    def _md(ctx: Context, line: str):
         # Level info
         level, line = _level_info(line)
         # Get number and clean
@@ -294,9 +320,9 @@ class PointNumbered(Paragraph):
         line = splitted[1].lstrip()
         # Parse via inheritance and convert
         para = super(PointNumbered, PointNumbered)._md(
-            line
+            ctx, line
         )  # BODGE: python doesn't like staticmethod and inheritance
-        numbered = PointNumbered(para.runs)
+        numbered = PointNumbered(ctx, para.runs)
         # Set info
         numbered.level = level
         numbered.num = num
@@ -325,6 +351,7 @@ class Document:
     elements = []
     title = None
     subtitle = None
+    ctx = Context()
 
     def __init__(self, md: str, andy: bool = False):
         # Set andy format
@@ -340,7 +367,7 @@ class Document:
         for line in lines_raw:
             lines.append(line.rstrip())
 
-        # Metadata»
+        # Metadata
         if len(lines) > 1 and lines[0] == "---":
             # Go over lines in metadata
             skip = 0
@@ -367,30 +394,28 @@ class Document:
                 lines = lines[1 + skip :]
 
         # Parse through lines
-        ind = 0
-        references = False
-        while ind < len(lines):
+        while self.ctx.line < len(lines):
             # Get line
-            line = lines[ind]
+            line = lines[self.ctx.line]
             stripped = line.lstrip()
             # Check start
             if stripped.startswith("#"):
                 # Heading
                 heading = Heading._md(stripped)
                 self.elements.append(heading)
+                self.ctx.heading = heading
                 # Check if heading defines references
-                references = heading.text.lower() in ["bibliography", "references"]
             elif stripped.startswith("```"):
                 # Codeblock
-                codeblock, skip = Codeblock._md(lines[ind:])
-                ind += skip
+                codeblock, skip = Codeblock._md(lines[self.ctx.line :])
+                self.ctx.line += skip
                 self.elements.append(codeblock)
             elif stripped.startswith(">"):
                 # Quote
-                self.elements.append(Quote._md(line))
+                self.elements.append(Quote._md(copy(self.ctx), line))
             elif stripped.startswith("-"):
                 # Bullet point
-                self.elements.append(PointBullet._md(line))
+                self.elements.append(PointBullet._md(copy(self.ctx), line))
             else:
                 # Check misc
                 try:
@@ -398,30 +423,33 @@ class Document:
                     if "." not in stripped:
                         raise Exception()
                     int(stripped.split(".", 1)[0])
-                    self.elements.append(PointNumbered._md(line))
+                    self.elements.append(PointNumbered._md(copy(self.ctx), line))
                 except:
                     # Paragraph
                     if (
                         # Non-sensitive typical empty lines
-                        (not references and line == "")
+                        (not self.ctx.no_spacing() and line == "")
                         # Sensitive but last line was title
-                        or (references and lines[ind - 1].lstrip().startswith("#"))
+                        or (
+                            self.ctx.no_spacing()
+                            and lines[self.ctx.line - 1].lstrip().startswith("#")
+                        )
                         # Sensitive but next line is title
                         or (
-                            references
-                            and len(lines) > ind + 1
-                            and lines[ind + 1].lstrip().startswith("#")
+                            self.ctx.no_spacing()
+                            and len(lines) > self.ctx.line + 1
+                            and lines[self.ctx.line + 1].lstrip().startswith("#")
                         )
                     ):
                         # Skip empty line
-                        ind += 1
+                        self.ctx.next_line()
                         continue
-                    self.elements.append(Paragraph._md(stripped, references))
+                    self.elements.append(Paragraph._md(copy(self.ctx), stripped))
 
             # TODO: images
 
             # Move to next line
-            ind += 1
+            self.ctx.next_line()
 
     def save(self, path: Path):
         """Saves document to `path` provided"""
@@ -435,7 +463,7 @@ class Document:
         if self.title or self.subtitle:
             # Create empty lines before title
             for _ in range(4):
-                para = Paragraph([Run("")])
+                para = Paragraph(copy(self.ctx), [Run(copy(self.ctx), "")])
                 para._docx(docx_doc)
 
             # Add title
@@ -443,7 +471,9 @@ class Document:
                 docx_para = docx_doc.add_heading(self.title, 0)
             # Add subtitle
             if self.subtitle:
-                docx_para = Paragraph([Run(self.subtitle)])._docx(docx_doc)
+                docx_para = Paragraph(
+                    copy(self.ctx), [Run(copy(self.ctx), self.subtitle)]
+                )._docx(docx_doc)
                 docx_para.style = "Subtitle"
 
             # Page break
