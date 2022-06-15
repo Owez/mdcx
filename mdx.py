@@ -275,7 +275,9 @@ class Quote(Paragraph):
         para = super()._docx(docx_doc)
         # Reset to quote styling
         para.style = "Quote"
-        para.paragraph_format.left_indent = Cm(0.75)
+        INDENT = 0.75
+        para.paragraph_format.left_indent = Cm(INDENT * self.level + 1)
+        para.paragraph_format.right_indent = Cm(INDENT)
         return para
 
 

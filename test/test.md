@@ -254,6 +254,8 @@ Here were defining a new namespace called SampleNamespace with a class (don’t 
 
 Procedural programming is an alternative to object orientated programming inside of the software development sphere. Both are abstract methodologies, themselves deriving from something called Imperative programming.
 
+> This is a testing quote which wasn't really a part of this document originally. This is similar to the bullet and numbered points below in this respect.
+
 The difference between the two is that object orientated programming groups blocks of logic to discrete objects, which interact with other objects by taking them in as inputs, or returning them as outputs; or deriving themselves entirely from such objects. Instead of using objects to represent groups of logic, procedural programming takes a simpler approach: It represents important tasks as only namespaces and functions. Here's some steps:
 
 1. Write it down
