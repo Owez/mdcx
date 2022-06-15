@@ -31,8 +31,9 @@ Coming soon!
 
 Here are the upcoming features for the development of mdx:
 
-- Basics:
-  - [ ] Links
+- Last of basics:
+  - [x] Hyperlinks
+  - [ ] Heading links
   - [ ] Images
   - [ ] Tables
   - [ ] Document for first public release
