@@ -62,6 +62,7 @@ class Heading:
         return Heading(text, level)
 
     def _docx(self, docx_doc: docx.Document):
+        # TODO: add bookmarks (<http://officeopenxml.com/WPhyperlink.php>)
         docx_doc.add_heading(self.text, self.level)
 
 
@@ -84,11 +85,7 @@ class Run:
     def _docx(self, docx_para: docx.text.paragraph.Paragraph) -> docx.text.run.Run:
         # Act different if it's a link
         if self.link is not None:
-            if self.link_external:
-                return _add_hyperlink(docx_para, self.link, self.text)
-            else:
-                pass  # TODO: internal link
-
+            return _add_link(docx_para, self.link, self.text, self.link_external)
         # Add plain run text
         docx_run = docx_para.add_run(self.text)
         # Add relevant styles
@@ -151,7 +148,7 @@ class Paragraph:
 
             # Link (external or internal)
             match = re.search(
-                r"^\[[^\]]*\]\([-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?\)",
+                r"^\[[^\]]*\]\((#[a-zA-Z0-9-]*|[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?)\)",
                 line[ind:],
             )
             if match:
@@ -607,20 +604,23 @@ def _rm_toc(md: str) -> list:
     return keep
 
 
-def _add_hyperlink(paragraph, url, text):
-    """Places a hyperlink within a paragraph object"""
+def _add_link(paragraph: str, link: str, text: str, external: bool):
+    """Places an internal or external link within a paragraph object"""
 
-    # This gets access to the document.xml.rels file and gets a new relation id value
-    part = paragraph.part
-    r_id = part.relate_to(
-        url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True
-    )
-    # Create the w:hyperlink tag and add needed values
+    # Create the w:hyperlink tag
     hyperlink = docx.oxml.shared.OxmlElement("w:hyperlink")
-    hyperlink.set(
-        docx.oxml.shared.qn("r:id"),
-        r_id,
-    )
+    # Set where it links to
+    if external:
+        # This gets access to the document.xml.rels file and gets a new relation id value
+        part = paragraph.part
+        r_id = part.relate_to(
+            link, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True
+        )
+        # External relationship value
+        hyperlink.set(docx.oxml.shared.qn("r:id"), r_id)
+    else:
+        # Internal anchor value
+        hyperlink.set(docx.oxml.shared.qn("w:anchor"), link)
     # Create a w:r element
     new_run = docx.oxml.shared.OxmlElement("w:r")
     # Create a new w:rPr element

@@ -21,7 +21,7 @@ Variables store data and variables are able to change, hence the name Variable. 
 
 ### Defining an Integer
 
-As we’re using [C#](https://hi.com) for this basic programming tutorial, we will use the syntax of C#. The syntax of a programming language means how it looks and how its formatted, comparable to how Spanish or Czech has a ton of accents above letters, compared to English which evidently doesn’t. For the first example, let’s see how we define a variable:
+As we’re using [C#](https://example.com) for this basic programming tutorial, we will use the syntax of C#. The syntax of a programming language means how it looks and how its formatted, comparable to how Spanish or Czech has a ton of accents above letters, compared to English which evidently doesn’t. For the first example, let’s see how we define a variable:
 
 ```
 int x = 1;
@@ -49,7 +49,7 @@ Defining a new string variable is just as simple as a number:
 string my_string = “Hello, World!”;
 ```
 
-In certain languages, such as C#, allow you to also add other variables inside of strings. This is called “string concatenation” or “string formatting”. The same thing happens in other languages like Python, albeit slightly differently:
+In certain languages, such as C#, allow you to also add other variables inside of strings. This is called “string concatenation” or “string formatting”. The same thing happens in other languages like [Python](https://www.python.org), albeit slightly differently:
 
 ```
 string new_string = $”HELLO {my_string) WORLD”;
@@ -59,7 +59,7 @@ This results in the overall string of “HELLO Hello, World! WORLD” being stor
 
 ### Defining a Float
 
-Floats are almost the same as numbers to define but require some kind of decimal (.x) after it no matter what. Floats are numbers with these decimals on the end; allowing for more precise division and numbers than just whole numbers.
+Floats are almost the same as the previous [Defining an Integer](#defining-an-integer) section, but require some kind of decimal (.x) after it no matter what. Floats are numbers with these decimals on the end; allowing for more precise division and numbers than just whole numbers.
 
 These do have a few disadvantages which won’t be mentioned in this tutorial, but keep in mind that it’s preferable to use integers if possible. This is how you define a float:
 
