@@ -6,6 +6,7 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
 from docx.shared import RGBColor, Pt, Cm
 import sys
+from lxml import etree
 
 STYLE_CODE = "Code"
 CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate high-clarity document format"
@@ -62,8 +63,9 @@ class Heading:
         return Heading(text, level)
 
     def _docx(self, docx_doc: docx.Document):
-        # TODO: add bookmarks (<http://officeopenxml.com/WPhyperlink.php>)
-        docx_doc.add_heading(self.text, self.level)
+        docx_para = docx_doc.add_heading(self.text, self.level)
+        # print(docx_para._element.xml)
+        # docx_para.insert(0, etree.XML("<hi />"))
 
 
 class Run:
@@ -216,7 +218,7 @@ class Codeblock:
         for ind, line in enumerate(lines[1:]):
             if line.lstrip() == "```":
                 # Check if there's a heading afterwards
-                if len(lines[1:]) > ind and lines[ind + 2].lstrip().startswith("#"):
+                if len(lines[1:])-1 > ind and lines[ind + 2].lstrip().startswith("#"): # TODO: out of range
                     heading_after = True
                 # Stop codeblock
                 break
@@ -346,13 +348,14 @@ class Document:
     font_body = "IBM Plex Serif"
     font_code = "IBM Plex Mono"
 
-    # Components
-    elements = []
-    title = None
-    subtitle = None
-    ctx = Context()
 
     def __init__(self, md: str, andy: bool = False):
+        # Components
+        self.elements = []
+        self.title = None
+        self.subtitle = None
+        self.ctx = Context()
+
         # Set andy format
         self.andy = andy
         if self.andy:
@@ -545,6 +548,7 @@ class Document:
         style_codeblock.font.name = self.font_code
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
+        style_codeblock.paragraph_format.alignment = 0
 
         # TODO: new "Link" run styling
 
