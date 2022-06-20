@@ -34,7 +34,7 @@ Here are the upcoming features for the development of mdx:
 - Last of basics:
   - [x] Hyperlinks
   - [ ] Heading links
-  - [ ] Images
+  - [x] Images
   - [ ] Tables
   - [ ] Document for first public release
 - Quality-of-life

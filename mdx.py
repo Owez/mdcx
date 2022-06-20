@@ -6,7 +6,6 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
 from docx.shared import RGBColor, Pt, Cm
 import sys
-from lxml import etree
 
 STYLE_CODE = "Code"
 CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate high-clarity document format"
@@ -71,7 +70,7 @@ class Heading:
 class Run:
     """Run of text with styling located inside a paragraph"""
 
-    def __init__(self, ctx: Context, text: str, link: tuple = None):
+    def __init__(self, ctx: Context, text: str, **kwargs):
         # Check that run is a string; python doesn't have strong typing sadly
         if type(text) != str:
             raise Exception("Make sure this run is a string, this is a common mistake")
@@ -80,9 +79,9 @@ class Run:
         self.text = text
         self.link = None
         self.link_external = None
-        if link is not None:
-            self.link = link[0]
-            self.link_external = link[1]
+        self.image = False
+        if "link" in kwargs:
+            self.link_external = kwargs["link"][1]
 
     def _docx(self, docx_para: docx.text.paragraph.Paragraph) -> docx.text.run.Run:
         # Act different if it's a link
@@ -99,7 +98,6 @@ class Run:
             docx_run.underline = True
         if self.ctx.strikethrough:
             docx_run.strikethrough = True
-        # TODO: link
         return docx_run
 
 
@@ -161,15 +159,15 @@ class Paragraph:
                 ind += len(match.group(0)) - 1
                 # Parse components
                 splitted = match.group(0).split("](", 1)
-                text = splitted[0][1:]
                 link = splitted[1][:-1].strip()
                 # Add link
                 if link.startswith("#"):
                     # Internal link
+                    text = splitted[0][1:]
                     runs.append(Run(copy(ctx), text, link=(link[1:], False)))
                 else:
                     # External link
-                    # TODO: parse markdown `text` rather than just making it raw text
+                    text = splitted[0][1:]  # TODO: parse markdown rather than raw text
                     # TODO: include local uris as an automatic appendix :)
                     runs.append(Run(copy(ctx), text, link=(link, True)))
 
@@ -218,7 +216,7 @@ class Codeblock:
         for ind, line in enumerate(lines[1:]):
             if line.lstrip() == "```":
                 # Check if there's a heading afterwards
-                if len(lines[1:])-1 > ind and lines[ind + 2].lstrip().startswith("#"): # TODO: out of range
+                if len(lines[1:]) - 1 > ind and lines[ind + 2].lstrip().startswith("#"):
                     heading_after = True
                 # Stop codeblock
                 break
@@ -340,6 +338,37 @@ class PointNumbered(Paragraph):
         return docx_para
 
 
+class Image:
+    """Image with some optional caption text"""
+
+    def __init__(self, ctx: Context, link: str, caption: Paragraph = None) -> None:
+        self.ctx = ctx
+        self.link = link
+        self.caption = caption
+
+    @staticmethod
+    def _md(ctx: Context, matched: str):
+        splitted = matched.split("](")
+        caption = splitted[0][2:].strip()
+        link = splitted[1][:-1].strip()
+        return Image(ctx, link, Paragraph._md(ctx, caption) if caption != "" else None)
+
+    def _docx(self, docx_doc: docx.Document) -> list[docx.text.paragraph.Paragraph]:
+        # Insert image
+        # TODO: width/height adjustment algorithm
+        docx_para_image = docx_doc.add_paragraph()
+        docx_run = docx_para_image.add_run()
+        docx_run.add_picture(self.link, height=Cm(10))
+
+        # Add caption
+        if self.caption:
+            docx_para_caption = self.caption._docx(docx_doc)
+            docx_para_caption.style = "Caption"
+
+            return [docx_para_image, docx_para_caption]
+        return [docx_para_image]
+
+
 class Document:
     """High-level document abstractions for conversion"""
 
@@ -347,7 +376,6 @@ class Document:
     font_heading = "IBM Plex Sans"
     font_body = "IBM Plex Serif"
     font_code = "IBM Plex Mono"
-
 
     def __init__(self, md: str, andy: bool = False):
         # Components
@@ -418,16 +446,22 @@ class Document:
             elif stripped.startswith("-"):
                 # Bullet point
                 self.elements.append(PointBullet._md(copy(self.ctx), line))
+            elif match := re.search(
+                r"^!?\[[^\]]*\]\((#[a-zA-Z0-9-]*|[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?)\)",
+                line,
+            ):
+                # Image
+                self.elements.append(Image._md(copy(self.ctx), match.group(0)))
+            # Check others
             else:
-                # Check misc
+                # Numbered point
                 try:
-                    # Numbered point
                     if "." not in stripped:
                         raise Exception()
                     int(stripped.split(".", 1)[0])
                     self.elements.append(PointNumbered._md(copy(self.ctx), line))
+                # Paragraph
                 except:
-                    # Paragraph
                     if (
                         # Non-sensitive typical empty lines
                         (not self.ctx.no_spacing() and line == "")
@@ -447,8 +481,6 @@ class Document:
                         self.ctx.next_line()
                         continue
                     self.elements.append(Paragraph._md(copy(self.ctx), stripped))
-
-            # TODO: images
 
             # Move to next line
             self.ctx.next_line()
@@ -530,12 +562,13 @@ class Document:
 
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
-        style_paragraph.paragraph_format.alignment = 3
+        if not self.andy:
+            style_paragraph.paragraph_format.alignment = 3
 
         # Styling for no spacing
         style_nospace = docx_doc.styles["No Spacing"]
         style_nospace.paragraph_format.alignment = (
-            0  # shouldn't be justified but inherits from paragraph
+            0  # shouldn't be justified but might inherit from paragraph
         )
 
         # Andy styling for paragraphs and no spacing

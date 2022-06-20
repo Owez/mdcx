@@ -1,5 +1,5 @@
 ---
-title: AirBnb Analysis for Upfest
+title: Upfest AirBnb Analysis
 subtitle: By Owen Griffiths
 ---
 
@@ -12,7 +12,9 @@ subtitle: By Owen Griffiths
   - [Algorithm](#algorithm)
 - [Infographic](#infographic)
   - [Querying](#querying-1)
-  - [Generation](#generation)
+  - [Reading](#reading)
+  - [Coordinates](#coordinates)
+  - [Generating](#generating)
 
 # Recommendations
 
@@ -131,7 +133,7 @@ This query executed successfully on the AirBnB dataset and gave me exactly 321 r
 
 I'm querying all database rows with the "*" wildcard in SQL simply because its quicker for me to do as a developer. There aren't any performance or other constraints because this whole process is being used to generate one (or more) maps to then distribute in it's finished form.
 
-## Generation
+## Reading
 
 To generate the image for the infographic, I'm going to be using the [Python](https://www.python.org) programming language. I'm using this because I have a lot of prior knowledge of the language and ecosystem, and because it's got a very capable selection of image editing libraries so that I can generate the infographic quickly.
 
@@ -147,13 +149,11 @@ After getting the image, I need to open the .csv file I exported from the databa
 ```python
 import csv
 
-
 class Listing:
     def __init__(self, row: str):
         self.id = row[0]
-        self.lat = row[43]
-        self.long = row[44]
-
+        self.lat = float(row[43])
+        self.long = float(row[44])
 
 file = open("bristol.csv", "r", newline="")
 r = csv.reader(file, delimiter=",", quotechar='"')
@@ -163,17 +163,56 @@ for ind, row in enumerate(r):
     if ind == 0:
         print(row)
         continue
-    listings.append(Listing(row))
+
+listings.append(Listing(row))
 ```
 
-I can now use the listings variable made in the last bit of this code to easily access the listings. Now, all I have to do is loop over every listing and add it to the map. I can sort of do it with this code that adds an icon to the image for every listing:
+I can now use the listings variable made in the last bit of this code to easily access the listings. Now, all I have to do is loop over every listing and add it to the map and then show the image. I can sort of do it with this code that adds an icon to the image for every listing:
 
 ```python
-# TODO
+# Add to image
+icon = Image.open("house.png")
+for listing in listings:
+    im.paste(icon)
+
+# Display image
+im.show()
 ```
+
+## Coordinates
 
 To make each of these dots actually line up with the map, I need to translate the coordinates to relative positions on the map which is a bit complicated.
 
 ```python
-# TODO
+class Listing:
+    ...
+
+    def px(self) -> tuple:
+        """Translates lat and long to 1418x758 image area"""
+        # Maximum coordinates
+        MAX_LAT = 51.444667
+        MAX_LONG = -2.625611
+        # Get max difference of coordinates
+        MAX_LAT_DIFF = MAX_LAT - 51.424528
+        MAX_LONG_DIFF = MAX_LONG - -2.564944
+        # Get our difference
+        lat_diff = MAX_LAT - self.lat
+        long_diff = MAX_LONG - self.long
+        # Position of our lat/long inside of max diff
+        lat_ratio = lat_diff / MAX_LAT_DIFF
+        long_ratio = long_diff / MAX_LONG_DIFF
+        # Get pixels by timing pixels by this
+        x = int(long_ratio * 1418)
+        y = int(lat_ratio * 758)
+        return (x, y)
 ```
+
+This calculates the maximum difference of the latitudes and longitudes (the space between the minimum and the maximum) and then checks the difference of the inputted latitudes and longitudes. For example, if x is 16 and y is 20 then the maximum difference would be 4. However, if our value is 17 then the difference would be 3. 
+
+Because we now have the maximum difference and our difference, we can check to see how far away from the maximum our difference was. We can make it into a fraction by just dividing ours by the maximum. From the previous example, it would be 3/4, which is 75% of the maximum difference. This fraction can be used as this percentage to adjust for the pixels. To integrate this into the image pasting loop, I replace "im.paste(icon)" with "im.paste(icon, listing.px())" which sets the top-left point of the image right at the converted pixel values. Here's the resulting image:
+
+![In-development infographic](images/dev_infographic.png)
+
+## Generating
+
+<!-- TODO -->
