@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("..")
 
-from mdx import Document
+from mdx import Document, Style
 
 
 def constructs():
@@ -12,7 +12,7 @@ def constructs():
     doc.save("constructs.docx")
 
     # In Python (andy)
-    doc = Document(md, True)
+    doc = Document(md, Style.andy())
     doc.save("constructs_andy.docx")
 
     # Command-line
@@ -26,7 +26,7 @@ def airbnb():
     doc.save("airbnb.docx")
 
     # In Python (andy)
-    doc = Document(md, True)
+    doc = Document(md, Style.andy())
     doc.save("airbnb_andy.docx")
 
     # Command-line

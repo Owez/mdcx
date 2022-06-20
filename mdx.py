@@ -150,7 +150,7 @@ class Paragraph:
             match = re.search(
                 r"^\[[^\]]*\]\((#[a-zA-Z0-9-]*|[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?)\)",
                 line[ind:],
-            )
+            )  # TODO: commas and other stuff fuck links up, wikipedia does this heavily
             if match:
                 # Finish existing buffer and skip link
                 runs.append(Run(copy(ctx), buf))
@@ -369,27 +369,61 @@ class Image:
         return [docx_para_image]
 
 
+class Style:
+    """Unified and modifiable style for a document"""
+
+    def __init__(
+        self,
+        font_heading: str,
+        font_body: str,
+        font_code: str,
+        body_pt: int,
+        body_justified: bool,
+        body_lines: float,
+        heading_bold: bool,
+        heading_blue: bool,
+        # TODO: numbered headings
+    ) -> None:
+        self.font_heading = font_heading
+        self.font_body = font_body
+        self.font_code = font_code
+        self.body_pt = body_pt
+        self.body_justified = body_justified
+        self.body_lines = body_lines
+        self.heading_bold = heading_bold
+        self.heading_blue = heading_blue
+
+    @staticmethod
+    def foxtrot():
+        return Style(
+            "IBM Plex Sans",
+            "IBM Plex Serif",
+            "IBM Plex Mono",
+            11,
+            True,
+            1.2,
+            False,
+            False,
+        )
+
+    @staticmethod
+    def andy():
+        return Style("Arial", "Arial", "Consolas", 12, False, 1.5, True, True)
+
+    def _body_alignment(self) -> int:
+        return 3 if self.body_justified else 0
+
+
 class Document:
     """High-level document abstractions for conversion"""
 
-    # Default fonts (changes via andy setting)
-    font_heading = "IBM Plex Sans"
-    font_body = "IBM Plex Serif"
-    font_code = "IBM Plex Mono"
-
-    def __init__(self, md: str, andy: bool = False):
+    def __init__(self, md: str, style: Style = Style.foxtrot()):
         # Components
         self.elements = []
         self.title = None
         self.subtitle = None
         self.ctx = Context()
-
-        # Set andy format
-        self.andy = andy
-        if self.andy:
-            self.font_heading = "Arial"
-            self.font_body = "Arial"
-            self.font_code = "Lucida Sans Typewriter"
+        self.style = style
 
         # Remove toc and clear up lines
         lines_raw = _rm_toc(md)
@@ -522,31 +556,34 @@ class Document:
         # Replace all fonts with body font by default
         for style in docx_doc.styles:
             if hasattr(style, "font"):
-                style.font.name = self.font_body
+                style.font.name = self.style.font_body
 
         # Styling for title
         style_title = docx_doc.styles["Title"]
         _style_title_border(style_title)
-        style_title.font.name = self.font_heading
+        style_title.font.name = self.style.font_heading
         style_title.font.size = Pt(26)
-        style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        if not self.style.heading_blue:
+            style_title.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_title.paragraph_format.space_after = Pt(3)
         style_title.paragraph_format.alignment = 1
 
         # Styling for subtitle
         style_subtitle = docx_doc.styles["Subtitle"]
-        style_subtitle.font.name = self.font_heading
+        style_subtitle.font.name = self.style.font_heading
         style_subtitle.font.size = Pt(14)
-        style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        if not self.style.heading_blue:
+            style_subtitle.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
         style_subtitle.font.italic = False
         style_subtitle.paragraph_format.alignment = 1
 
         # Styling for headings
         for h in range(1, 9):
             style_heading = docx_doc.styles[f"Heading {h}"]
-            style_heading.font.name = self.font_heading
-            style_heading.font.bold = self.andy
-            style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+            style_heading.font.name = self.style.font_heading
+            style_heading.font.bold = self.style.heading_bold
+            if not self.style.heading_blue:
+                style_heading.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
             # Per-level styling
             if h == 1:
@@ -562,23 +599,12 @@ class Document:
 
         # Styling for paragraphs
         style_paragraph = docx_doc.styles["Normal"]
-        if not self.andy:
-            style_paragraph.paragraph_format.alignment = 3
-
-        # Styling for no spacing
-        style_nospace = docx_doc.styles["No Spacing"]
-        style_nospace.paragraph_format.alignment = (
-            0  # shouldn't be justified but might inherit from paragraph
-        )
-
-        # Andy styling for paragraphs and no spacing
-        if self.andy:
-            style_paragraph.paragraph_format.line_spacing = 1.5
-            for style in [style_paragraph, style_nospace]:
-                style.font.size = Pt(12)
+        style_paragraph.font.size = Pt(self.style.body_pt)
+        style_paragraph.paragraph_format.alignment = self.style._body_alignment()
+        style_paragraph.paragraph_format.line_spacing = self.style.body_lines
 
         # Styling for codeblocks
-        style_codeblock.font.name = self.font_code
+        style_codeblock.font.name = self.style.font_code
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
         style_codeblock.paragraph_format.alignment = 0
@@ -696,6 +722,7 @@ if __name__ == "__main__":
         _err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
     # try:
-    Document(md, andy).save(args[1])
+    style = Style.foxtrot() if not andy else Style.andy()
+    Document(md, style).save(args[1])
     # except Exception as e:
     #     _err_exit(f"Couldn't convert document; {e}")  # TODO: better errors
