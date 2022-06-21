@@ -63,6 +63,7 @@ class Heading:
 
     def _docx(self, docx_doc: docx.Document):
         docx_para = docx_doc.add_heading(self.text, self.level)
+        # TODO: bookmarks
         # print(docx_para._element.xml)
         # docx_para.insert(0, etree.XML("<hi />"))
 
@@ -80,7 +81,9 @@ class Run:
         self.link = None
         self.link_external = None
         self.image = False
+        # Link specialty
         if "link" in kwargs:
+            self.link = kwargs["link"][0]
             self.link_external = kwargs["link"][1]
 
     def _docx(self, docx_para: docx.text.paragraph.Paragraph) -> docx.text.run.Run:
@@ -148,9 +151,9 @@ class Paragraph:
 
             # Link (external or internal)
             match = re.search(
-                r"^\[[^\]]*\]\((#[a-zA-Z0-9-]*|[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?)\)",
+                r"^\[.+\]\(.*\)",
                 line[ind:],
-            )  # TODO: commas and other stuff fuck links up, wikipedia does this heavily
+            )
             if match:
                 # Finish existing buffer and skip link
                 runs.append(Run(copy(ctx), buf))
@@ -361,7 +364,9 @@ class Image:
         try:
             docx_run.add_picture(self.link, height=Cm(10))
         except:
-            raise Exception(f"Couldn't add image {self.link} to document; check if it exists")
+            raise Exception(
+                f"Couldn't add image {self.link} to document; check if it exists"
+            )
 
         # Add caption
         if self.caption:
@@ -484,7 +489,7 @@ class Document:
                 # Bullet point
                 self.elements.append(PointBullet._md(copy(self.ctx), line))
             elif match := re.search(
-                r"^!?\[[^\]]*\]\((#[a-zA-Z0-9-]*|[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?)\)",
+                r"^!\[.*\]\(.+\)",
                 line,
             ):
                 # Image
@@ -670,7 +675,9 @@ def _rm_toc(md: str) -> list:
     return keep
 
 
-def _add_link(paragraph: str, link: str, text: str, external: bool):
+def _add_link(
+    paragraph: docx.text.paragraph.Paragraph, link: str, text: str, external: bool
+):
     """Places an internal or external link within a paragraph object"""
 
     # Create the w:hyperlink tag
