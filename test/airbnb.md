@@ -57,7 +57,9 @@ then
 endif
 ```
 
-Aside from these void conditions, we can start by using the review score given to them by customers as a good and insightful metric. If there are less than 5 reviews (which is uncommon), we'll set their default rating to 80 which is lower than the average of ~92. This is because the Upfest festival is happening at a pre-determined time and ideally only trusted AirBnB's should be included. These default ratings don't take fakes into consideration, but my hope is that the dataset has protection against that and if not my algorithm should be decently resilient either way. Here's the pseudocode for doing this:
+Aside from these void conditions, we can start by using the review score given to them by customers as a good and insightful metric. If there are less than 5 reviews (which is uncommon), we'll set their default rating to 80 which is lower than the average of around 92.
+
+This is because the Upfest festival is happening at a pre-determined time and ideally only trusted AirBnB's should be included. These default ratings don't take fakes into consideration, but my hope is that the dataset has protection against that and if not my algorithm should be decently resilient either way. Here's the pseudocode for doing this:
 
 ```
 rating = review_scores_rating

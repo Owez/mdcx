@@ -14,12 +14,14 @@ CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nAr
 class Context:
     """Contextual information for compartmentalised converting"""
 
-    line = 0
-    heading = None
-    italic = False
-    bold = False
-    underline = False
-    strikethrough = False
+    def __init__(self) -> None:
+        self.line = 0
+        self.heading = None
+        self.italic = False
+        self.bold = False
+        self.underline = False
+        self.strikethrough = False
+        self.figures = 0
 
     def no_spacing(self) -> bool:
         """Checks if elements should have spacing within the current section"""
@@ -137,7 +139,7 @@ class Paragraph:
                     flipflop = False
                     continue
                 # Finish existing buffer
-                runs.append(Run(copy(ctx), buf))
+                runs.append(Run(copy(ctx), buf))  # TODO: move copy to inside of run
                 buf = ""
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
@@ -156,7 +158,7 @@ class Paragraph:
             )
             if match:
                 # Finish existing buffer and skip link
-                runs.append(Run(copy(ctx), buf))
+                runs.append(Run(copy(ctx), buf))  # TODO: move copy to inside of run
                 buf = ""
                 add = False
                 ind += len(match.group(0)) - 1
@@ -167,12 +169,16 @@ class Paragraph:
                 if link.startswith("#"):
                     # Internal link
                     text = splitted[0][1:]
-                    runs.append(Run(copy(ctx), text, link=(link[1:], False)))
+                    runs.append(
+                        Run(copy(ctx), text, link=(link[1:], False))
+                    )  # TODO: move copy to inside of run
                 else:
                     # External link
                     text = splitted[0][1:]  # TODO: parse markdown rather than raw text
                     # TODO: include local uris as an automatic appendix :)
-                    runs.append(Run(copy(ctx), text, link=(link, True)))
+                    runs.append(
+                        Run(copy(ctx), text, link=(link, True))
+                    )  # TODO: move copy to inside of run
 
             # Add to ind/buf
             if add:
@@ -182,7 +188,7 @@ class Paragraph:
             ind += 1
 
         # Create paragraph and return
-        runs.append(Run(copy(ctx), buf))
+        runs.append(Run(copy(ctx), buf))  # TODO: move copy to inside of run
         return Paragraph(ctx, runs)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
@@ -353,8 +359,13 @@ class Image:
     def _md(ctx: Context, matched: str):
         splitted = matched.split("](")
         caption = splitted[0][2:].strip()
+        if caption != "":
+            ctx.figures += 1
+            caption = Paragraph._md(ctx, f"Figure {ctx.figures} - {caption}")
+        else:
+            caption = None
         link = splitted[1][:-1].strip()
-        return Image(ctx, link, Paragraph._md(ctx, caption) if caption != "" else None)
+        return Image(copy(ctx), link, caption)
 
     def _docx(self, docx_doc: docx.Document) -> list[docx.text.paragraph.Paragraph]:
         # Insert image
@@ -493,7 +504,7 @@ class Document:
                 line,
             ):
                 # Image
-                self.elements.append(Image._md(copy(self.ctx), match.group(0)))
+                self.elements.append(Image._md(self.ctx, match.group(0)))
             # Check others
             else:
                 # Numbered point
@@ -611,13 +622,18 @@ class Document:
         style_paragraph.paragraph_format.alignment = self.style._body_alignment()
         style_paragraph.paragraph_format.line_spacing = self.style.body_lines
 
+        # Styling for captions
+        if not self.style.heading_blue:
+            style_caption = docx_doc.styles["Caption"]
+            style_caption.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+
         # Styling for codeblocks
         style_codeblock.font.name = self.style.font_code
         style_codeblock.paragraph_format.space_after = Pt(0)
         style_codeblock.paragraph_format.line_spacing = 1
         style_codeblock.paragraph_format.alignment = 0
 
-        # TODO: new "Link" run styling
+        # TODO: new "Link" run styling, can be done
 
         # Use docx's vanilla save
         docx_doc.save(path)
