@@ -358,7 +358,10 @@ class Image:
         # TODO: width/height adjustment algorithm
         docx_para_image = docx_doc.add_paragraph()
         docx_run = docx_para_image.add_run()
-        docx_run.add_picture(self.link, height=Cm(10))
+        try:
+            docx_run.add_picture(self.link, height=Cm(10))
+        except:
+            raise Exception(f"Couldn't add image {self.link} to document; check if it exists")
 
         # Add caption
         if self.caption:

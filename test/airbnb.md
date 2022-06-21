@@ -112,6 +112,8 @@ For task 3 I need to make an infographic (a well-designed graph for public consu
 
 The first task is to find the approximate maximum bounds of the area radius we want to make the infographic for. I went on Google Maps and found the festival area listed on the requirements sheet called [Bedminster](https://en.wikipedia.org/wiki/Bedminster,_Bristol) which is a district in the south of Bristol. Now that I've determined the location of the event, I need to pick the radius which is suitable for short travel.
 
+![Bedminster, Bristol](images/airbnb_bedminster.png)
+
 There aren't many bridges over the west-to-east river flowing 500m north of Bedminster so I don't want to target anything past the bridge. I'm thinking that I should go about a km in all other directions. This gives me a 2kmx1.5km rectangle of suitable area thanks to the layout of Bristol. Now I need to translate the four corners of this rectangle into four coordinates which can be the search bounds for my database query. After using Google Maps further, these coordinates will be:
 
 - Top left: 51.444667, -2.625611
@@ -130,6 +132,8 @@ WHERE
 ```
 
 This query executed successfully on the AirBnB dataset and gave me exactly 321 results back, instead of the 2396 rows that it normally supplies to us. Now I can export these 321 results into a .csv file to use in the next section to generate the actual infographic image.
+
+![Items in database ready to go into .csv form](images/airbnb_db.png)
 
 I'm querying all database rows with the "*" wildcard in SQL simply because its quicker for me to do as a developer. There aren't any performance or other constraints because this whole process is being used to generate one (or more) maps to then distribute in it's finished form.
 
@@ -227,7 +231,7 @@ I chose this icon because pins are commonly used in industry and because I can e
 
 The development icons had this issue because they where too large. Instead of showing where the houses where on the map, it instead completely covered the useful part of the map with itself, making the entire infographic useless. By using smaller pins I can alleviate this issue. With this new icon added to my generation script, the new map for the infographic looks like:
 
-![New map for infographic](images/airbnb_map.png)
+<!-- TODO: ![New map for infographic](images/airbnb_map.png) -->
 
 Now that I have the central map for the infographic, I need to open a graphical editor and create a nice-looking infographic around this image. I want to have a bold and eye-catching title, as well as some borders around the map image for theming.
 
