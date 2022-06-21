@@ -209,10 +209,26 @@ class Listing:
 
 This calculates the maximum difference of the latitudes and longitudes (the space between the minimum and the maximum) and then checks the difference of the inputted latitudes and longitudes. For example, if x is 16 and y is 20 then the maximum difference would be 4. However, if our value is 17 then the difference would be 3. 
 
-Because we now have the maximum difference and our difference, we can check to see how far away from the maximum our difference was. We can make it into a fraction by just dividing ours by the maximum. From the previous example, it would be 3/4, which is 75% of the maximum difference. This fraction can be used as this percentage to adjust for the pixels. To integrate this into the image pasting loop, I replace "im.paste(icon)" with "im.paste(icon, listing.px())" which sets the top-left point of the image right at the converted pixel values. Here's the resulting image:
+Because we now have the maximum difference and our difference, we can check to see how far away from the maximum our difference was. We can make it into a fraction by just dividing ours by the maximum. From the previous example, it would be 3/4, which is 75% of the maximum difference. This fraction can be used as this percentage to adjust for the pixels. To integrate this into the image pasting loop, I replace "im.paste(icon)" with "im.paste(icon, listing.px())" which sets the top-left point of the image right at the converted pixel values.
 
-![In-development infographic](images/dev_infographic.png)
+I installed some extremely high-quality icons to use as development images for an initial test and this is what came out of the infographic generator:
+
+![In-development infographic](images/airbnb_dev.png)
+
+Unfortunately, these houses don't actually line up to where they go. I have since fixed this issue (it was caused by my screenshot being 2x as large as the area of screen selected, making the icons generate only in one corner) and now I can properly generate an infographic.
 
 ## Generating
+
+Inside of this section I'll add the final touches to the infographic, such as it's design and general layout to make it ready for public consumption. The first task is replacing the development icons which you can see in the last section with some better icons; perhaps some pins. After some consideration, I have chosen this icon to represent every AirBnB residence on my infographic:
+
+![Map pin for the infographic](images/airbnb_icon.png)
+
+I chose this icon because pins are commonly used in industry and because I can easily scale them up/down depending on how many AirBnB residences there are on the map.
+
+The development icons had this issue because they where too large. Instead of showing where the houses where on the map, it instead completely covered the useful part of the map with itself, making the entire infographic useless. By using smaller pins I can alleviate this issue. With this new icon added to my generation script, the new map for the infographic looks like:
+
+![New map for infographic](images/airbnb_map.png)
+
+Now that I have the central map for the infographic, I need to open a graphical editor and create a nice-looking infographic around this image. I want to have a bold and eye-catching title, as well as some borders around the map image for theming.
 
 <!-- TODO -->
