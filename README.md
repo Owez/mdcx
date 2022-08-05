@@ -41,6 +41,7 @@ Here are the upcoming features for the development of mdx:
   - [x] Automatically remove Markdown TOCs
   - [x] Good references/bibiolography styling (no-spaced, newline-aware)
   - [ ] Support `#` titles as well as the current yml titles
+  - [ ] Support a basic version of TOML `+++` metadata
 - Extras:
   - [ ] Local URIs become automatic managed appendixes
 
