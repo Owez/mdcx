@@ -8,7 +8,7 @@ from docx.shared import RGBColor, Pt, Cm
 import sys
 
 STYLE_CODE = "Code"
-CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --andy    Alternate high-clarity document format"
+CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --foxtrot    Alternate document format"
 
 
 class Context:
@@ -27,7 +27,7 @@ class Context:
         """Checks if elements should have spacing within the current section"""
         if self.heading is None:
             return False
-        return self.heading.text.lower() in ["bibliography", "references"]
+        return _is_bib(self.heading.text)
 
     def next_line(self):
         """Skips to the next line"""
@@ -64,6 +64,10 @@ class Heading:
         return Heading(text, level)
 
     def _docx(self, docx_doc: docx.Document):
+        # Page break for bibliography
+        if _is_bib(self.text):
+            docx_doc.add_page_break()
+        # Add heading
         docx_para = docx_doc.add_heading(self.text, self.level)
         # TODO: bookmarks
         # print(docx_para._element.xml)
@@ -413,6 +417,10 @@ class Style:
         self.heading_blue = heading_blue
 
     @staticmethod
+    def andy():
+        return Style("Arial", "Arial", "Consolas", 12, False, 1.5, True, True)
+
+    @staticmethod
     def foxtrot():
         return Style(
             "IBM Plex Sans",
@@ -425,10 +433,6 @@ class Style:
             False,
         )
 
-    @staticmethod
-    def andy():
-        return Style("Arial", "Arial", "Consolas", 12, False, 1.5, True, True)
-
     def _body_alignment(self) -> int:
         return 3 if self.body_justified else 0
 
@@ -436,7 +440,7 @@ class Style:
 class Document:
     """High-level document abstractions for conversion"""
 
-    def __init__(self, md: str, style: Style = Style.foxtrot()):
+    def __init__(self, md: str, style: Style = Style.andy()):
         # Components
         self.elements = []
         self.title = None
@@ -728,6 +732,11 @@ def _add_link(
     # Add to paragraph
     paragraph._p.append(hyperlink)
     return hyperlink
+
+
+def _is_bib(text: str) -> bool:
+    """Checks if provided heading text is referencing a bibliography"""
+    return text.lower() in ["bibliography", "references"]
 
 
 # Command-line
