@@ -11,9 +11,9 @@ def constructs():
     doc = Document(md)
     doc.save("constructs.docx")
 
-    # In Python (andy)
-    doc = Document(md, Style.andy())
-    doc.save("constructs_andy.docx")
+    # In Python (foxtrot)
+    doc = Document(md, Style.foxtrot())
+    doc.save("constructs_foxtrot.docx")
 
     # Command-line
     # TODO: test command-line
@@ -25,9 +25,9 @@ def airbnb():
     doc = Document(md)
     doc.save("airbnb.docx")
 
-    # In Python (andy)
-    doc = Document(md, Style.andy())
-    doc.save("airbnb_andy.docx")
+    # In Python (foxtrot)
+    doc = Document(md, Style.foxtrot())
+    doc.save("airbnb_foxtrot.docx")
 
     # Command-line
     # TODO: test command-line

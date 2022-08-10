@@ -482,12 +482,15 @@ class Document:
             line = lines[self.ctx.line]
             stripped = line.lstrip()
             # Check start
+            if stripped.startswith("<!--"):
+                # Comment
+                self.ctx.next_line()
+                continue
             if stripped.startswith("#"):
                 # Heading
                 heading = Heading._md(stripped)
                 self.elements.append(heading)
                 self.ctx.heading = heading
-                # Check if heading defines references
             elif stripped.startswith("```"):
                 # Codeblock
                 codeblock, skip = Codeblock._md(lines[self.ctx.line :])
@@ -737,8 +740,8 @@ if __name__ == "__main__":
     elif "--help" in args[2:]:
         print(CLI_HELP)
         sys.exit(0)
-    # Get andy setting
-    andy = "--andy" in args[2:]
+    # Get foxtrot setting
+    foxtrot = "--foxtrot" in args[2:]
     # Get markdown from file
     md = ""
     try:
@@ -747,8 +750,5 @@ if __name__ == "__main__":
     except Exception as e:
         _err_exit(f"Invalid file, {e}")
     # Create and save document to defined parts
-    # try:
-    style = Style.foxtrot() if not andy else Style.andy()
+    style = Style.andy() if not foxtrot else Style.foxtrot()
     Document(md, style).save(args[1])
-    # except Exception as e:
-    #     _err_exit(f"Couldn't convert document; {e}")  # TODO: better errors

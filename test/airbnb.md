@@ -15,6 +15,7 @@ subtitle: By Owen Griffiths
   - [Reading](#reading)
   - [Coordinates](#coordinates)
   - [Generating](#generating)
+- [Graphs](#graphs)
 
 # Recommendations
 
@@ -231,10 +232,27 @@ Inside of this section I'll add the final touches to the infographic, such as it
 
 I chose this icon because pins are commonly used in industry and because I can easily scale them up/down depending on how many AirBnB residences there are on the map.
 
-The development icons had this issue because they where too large. Instead of showing where the houses where on the map, it instead completely covered the useful part of the map with itself, making the entire infographic useless. By using smaller pins I can alleviate this issue. With this new icon added to my generation script, the new map for the infographic looks like:
+The development icons had this issue because they where too large. Instead of showing where the houses where on the map, it instead completely covered the useful part of the map with itself, making the entire infographic useless. By using smaller pins I can alleviate this issue.
 
-<!-- TODO: ![New map for infographic](images/airbnb_map.png) -->
+I also had to correct the positioning of the icons once I scaled them down because they're pasted at the top left as mentioned previously. To fix this, I have to add a mathematical adjustment to instead put the placement left and up a bit so the pin is actually pointing to the right location. This is done with the following code:
+
+```python
+x = int(long_ratio * 1418-22/4)
+y = int(lat_ratio * 758-32)
+```
+
+After making these adjustments inside of the code and after dragging the icon into my development folder for use, the new map for the infographic looks like:
+
+![New map for infographic](images/airbnb_infographic_map.png)
 
 Now that I have the central map for the infographic, I need to open a graphical editor and create a nice-looking infographic around this image. I want to have a bold and eye-catching title, as well as some borders around the map image for theming.
+
+<!-- TODO -->
+
+# Graphs
+
+For the final task I have to generate some graphs about a few key metrics of these AirBnB locations located inside of the area I defined. The metrics I could study could be anything from the price of the AirBnB to the rating I gave it before.
+
+The first graph will be
 
 <!-- TODO -->
