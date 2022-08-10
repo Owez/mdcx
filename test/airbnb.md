@@ -111,7 +111,7 @@ rating = rating - ratio / 10
 
 ## Querying
 
-For task 3 I need to make an infographic (a well-designed graph for public consumption) to display the suitable AirBnB locations near the festival area. This will require more in-depth querying of the database and a bit of mapping.
+For task 3 I need to make an infographic (a well-designed graph for public consumption) to display the suitable AirBnB locations near the festival area. This will require more in-depth querying of the database and a bit of mapping using <https://google.co.uk>.
 
 The first task is to find the approximate maximum bounds of the area radius we want to make the infographic for. I went on Google Maps and found the festival area listed on the requirements sheet called [Bedminster](https://en.wikipedia.org/wiki/Bedminster,_Bristol) which is a district in the south of Bristol. Now that I've determined the location of the event, I need to pick the radius which is suitable for short travel.
 

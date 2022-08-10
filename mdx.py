@@ -82,7 +82,7 @@ class Run:
         if type(text) != str:
             raise Exception("Make sure this run is a string, this is a common mistake")
         # Create tuns
-        self.ctx = ctx
+        self.ctx = copy(ctx)
         self.text = text
         self.link = None
         self.link_external = None
@@ -137,13 +137,14 @@ class Paragraph:
 
             # Bold/italics
             if c == "*":
-                # Calculate flipflop
-                add = flipflop
+                # Calculate add and flipflop
+                # TODO: check this flipflop works cause of that continue? then apply it to cheeky links
+                add = flipflop  # TODO: check if this add should be above or below and how it relates to finish existing buffer
                 if flipflop:
                     flipflop = False
                     continue
                 # Finish existing buffer
-                runs.append(Run(copy(ctx), buf))  # TODO: move copy to inside of run
+                runs.append(Run(ctx, buf))
                 buf = ""
                 # Get star length
                 stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
@@ -155,14 +156,25 @@ class Paragraph:
                     ctx.flip_bold()
                 ind += stars - 1
 
-            # Link (external or internal)
+            # Cheeky link (external only)
+            if c == "<":
+                # TODO: check backslash flipflops here
+                # Finish existing buffer
+                runs.append(Run(ctx, buf))
+                buf = ""
+                add = False
+                # Get until end symbol
+                # TODO: get till `>` and remember \ escapes
+                # TODO: finish
+
+            # Proper link (external or internal)
             match = re.search(
                 r"^\[.+\]\(.*\)",
                 line[ind:],
             )
             if match:
                 # Finish existing buffer and skip link
-                runs.append(Run(copy(ctx), buf))  # TODO: move copy to inside of run
+                runs.append(Run(ctx, buf))
                 buf = ""
                 add = False
                 ind += len(match.group(0)) - 1
@@ -173,16 +185,12 @@ class Paragraph:
                 if link.startswith("#"):
                     # Internal link
                     text = splitted[0][1:]
-                    runs.append(
-                        Run(copy(ctx), text, link=(link[1:], False))
-                    )  # TODO: move copy to inside of run
+                    runs.append(Run(ctx, text, link=(link[1:], False)))
                 else:
                     # External link
                     text = splitted[0][1:]  # TODO: parse markdown rather than raw text
                     # TODO: include local uris as an automatic appendix :)
-                    runs.append(
-                        Run(copy(ctx), text, link=(link, True))
-                    )  # TODO: move copy to inside of run
+                    runs.append(Run(ctx, text, link=(link, True)))
 
             # Add to ind/buf
             if add:
@@ -192,7 +200,7 @@ class Paragraph:
             ind += 1
 
         # Create paragraph and return
-        runs.append(Run(copy(ctx), buf))  # TODO: move copy to inside of run
+        runs.append(Run(ctx, buf))
         return Paragraph(ctx, runs)
 
     def _docx(self, docx_doc: docx.Document) -> docx.text.paragraph.Paragraph:
@@ -720,13 +728,13 @@ def _add_link(
     # Create a w:r element
     new_run = docx.oxml.shared.OxmlElement("w:r")
     # Create a new w:rPr element
-    rPr = docx.oxml.shared.OxmlElement("w:rPr")
+    run_prop = docx.oxml.shared.OxmlElement("w:rPr")
     # Add link styling
-    rStyle = docx.oxml.shared.OxmlElement("w:pStyle")
-    rStyle.set(docx.oxml.shared.qn("w:val"), "Link")
-    rPr.append(rStyle)
+    run_style = docx.oxml.shared.OxmlElement("w:pStyle")
+    run_style.set(docx.oxml.shared.qn("w:val"), "Link")
+    run_prop.append(run_style)
     # Join all the xml elements together add add the required text to the w:r element
-    new_run.append(rPr)
+    new_run.append(run_prop)
     new_run.text = text
     hyperlink.append(new_run)
     # Add to paragraph
