@@ -155,17 +155,32 @@ class Paragraph:
                 if stars > 1:
                     ctx.flip_bold()
                 ind += stars - 1
-
             # Cheeky link (external only)
-            if c == "<":
-                # TODO: check backslash flipflops here
-                # Finish existing buffer
-                runs.append(Run(ctx, buf))
-                buf = ""
-                add = False
-                # Get until end symbol
-                # TODO: get till `>` and remember \ escapes
-                # TODO: finish
+            elif c == "<" and ">" in line[ind:]:
+                # Get link contents, cant use partition due to inner backslashes
+                link = ""
+                backslash = False
+                got = False
+                for check in line[ind + 1 :]:
+                    if backslash:
+                        backslash = False
+                        link += check
+                    elif check == "\\":
+                        backslash = True
+                    elif check == ">":
+                        got = True
+                        break
+                    else:
+                        link += check
+                # Decide if we got a link, needed in case of only having backlashed >'s in a line
+                if got:
+                    # TODO: check backslash flipflops here
+                    # Finish existing buffer
+                    runs.append(Run(ctx, buf))
+                    buf = ""
+                    add = False
+                    # Add new link
+                    # TODO: finish
 
             # Proper link (external or internal)
             match = re.search(
