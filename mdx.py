@@ -123,96 +123,118 @@ class Paragraph:
 
     @staticmethod
     def _md(ctx: Context, line: str):
-        # Parse through runs
+        # Metadata
         runs = []
         ind = 0
         flipflop = False
         buf = ""
-        add = True
 
         # Go through each character
         while ind < len(line):
-            # Get character
-            c = line[ind]
-
+            # Flipflops
+            if flipflop:
+                buf += line[ind]
+                ind += 1
+                flipflop = False
+            # Backslash for flipflop
+            elif line[ind] == "\\":
+                flipflop = True
             # Bold/italics
-            if c == "*":
-                # Calculate add and flipflop
-                # TODO: check this flipflop works cause of that continue? then apply it to cheeky links. move this above `if c == "*"`
-                add = flipflop  # TODO: check if this add should be above or below and how it relates to finish existing buffer
-                if flipflop:
-                    flipflop = False
-                    continue
-                # Finish existing buffer
+            elif line[ind] == "*":
+                # Clear buf
                 runs.append(Run(ctx, buf))
                 buf = ""
-                # Get star length
-                stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
-                # Italics if theres a non-even amount
-                if stars % 2 == 1:
-                    ctx.flip_italic()
-                # Bold if theres two or more
-                if stars > 1:
-                    ctx.flip_bold()
-                ind += stars - 1
-            # Cheeky link (external only)
-            elif c == "<" and ">" in line[ind:]:
-                # Get link contents, cant use partition due to inner backslashes
-                link = ""
-                backslash = False
-                got = False
-                for check in line[ind + 1 :]:
-                    if backslash:
-                        backslash = False
-                        link += check
-                    elif check == "\\":
-                        backslash = True
-                    elif check == ">":
-                        got = True
-                        break
-                    else:
-                        link += check
-                # Decide if we got a link, needed in case of only having backlashed >'s in a line
-                if got:
-                    # Finish existing buffer
-                    runs.append(Run(ctx, buf))
-                    buf = ""
-                    add = False
-                    ind += len(link) + 1
-                    # Add new link
-                    runs.append(Run(ctx, link, link=(link, True)))
-
-            # Proper link (external or internal)
-            match = re.search(
-                r"^\[.+\]\(.*\)",
-                line[ind:],
-            )
-            if match:
-                # Finish existing buffer and skip link
+                # Parse
+                ind += _run_ib(ctx, line[ind:])
+            # Cheeky link
+            elif line[ind] == "<" and ">" in line[ind:]:
+                # Clear buf
                 runs.append(Run(ctx, buf))
                 buf = ""
-                add = False
-                ind += len(match.group(0)) - 1
-                # Parse components
-                splitted = match.group(0).split("](", 1)
-                link = splitted[1][:-1].strip()
-                # Add link
-                if link.startswith("#"):
-                    # Internal link
-                    text = splitted[0][1:]
-                    runs.append(Run(ctx, text, link=(link[1:], False)))
-                else:
-                    # External link
-                    text = splitted[0][1:]  # TODO: parse markdown rather than raw text
-                    # TODO: include local uris as an automatic appendix :)
-                    runs.append(Run(ctx, text, link=(link, True)))
-
-            # Add to ind/buf
-            if add:
-                buf += c
+                # Parse
+                res = _run_cheeky(ctx, line[ind:])
+                ind += res[0]
+                runs.append(res[1])
+            # Normal character
             else:
-                add = True
-            ind += 1
+                buf += line[ind]
+                ind += 1
+
+            # TODO: implement normal link again
+            # # Bold/italics
+            # if flipflop:
+            #     flipflop = False
+            # elif c == "\\":
+            #     flipflop = True
+            #     continue
+            # elif c == "*":
+            #     # Finish existing buffer
+            #     runs.append(Run(ctx, buf))
+            #     buf = ""
+            #     # Get star length
+            #     stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
+            #     # Italics if theres a non-even amount
+            #     if stars % 2 == 1:
+            #         ctx.flip_italic()
+            #     # Bold if theres two or more
+            #     if stars > 1:
+            #         ctx.flip_bold()
+            #     ind += stars - 1
+            # # Cheeky link (external only)
+            # elif c == "<" and ">" in line[ind:]:
+            #     # Get link contents, cant use partition due to inner backslashes
+            #     link = ""
+            #     backslash = False
+            #     got = False
+            #     for check in line[ind + 1 :]:
+            #         if backslash:
+            #             backslash = False
+            #             link += check
+            #         elif check == "\\":
+            #             backslash = True
+            #         elif check == ">":
+            #             got = True
+            #             break
+            #         else:
+            #             link += check
+            #     # Decide if we got a link, needed in case of only having backlashed >'s in a line
+            #     if got:
+            #         # Finish existing buffer
+            #         runs.append(Run(ctx, buf))
+            #         buf = ""
+            #         ind += len(link) + 1
+            #         # Add new link
+            #         runs.append(Run(ctx, link, link=(link, True)))
+            # # Proper link (external or internal) or nothing
+            # else:
+            #     match = re.search(
+            #         r"^\[.+\]\(.*\)",
+            #         line[ind:],
+            #     )
+            #     if match:
+            #         # Finish existing buffer and skip link
+            #         runs.append(Run(ctx, buf))
+            #         buf = ""
+            #         ind += len(match.group(0)) - 1
+            #         # Parse components
+            #         splitted = match.group(0).split("](", 1)
+            #         link = splitted[1][:-1].strip()
+            #         # Add link
+            #         if link.startswith("#"):
+            #             # Internal link
+            #             text = splitted[0][1:]
+            #             runs.append(Run(ctx, text, link=(link[1:], False)))
+            #         else:
+            #             # External link
+            #             text = splitted[0][
+            #                 1:
+            #             ]  # TODO: parse markdown rather than raw text
+            #             # TODO: include local uris as an automatic appendix :)
+            #             runs.append(Run(ctx, text, link=(link, True)))
+
+            # # Add to ind/buf
+            # buf += c
+            # ind += 1
 
         # Create paragraph and return
         runs.append(Run(ctx, buf))
@@ -760,6 +782,54 @@ def _add_link(
 def _is_bib(text: str) -> bool:
     """Checks if provided heading text is referencing a bibliography"""
     return text.lower() in ["bibliography", "references"]
+
+
+def _run_ib(ctx: Context, line: str) -> int:
+    """Run parsing for italics and bold"""
+
+    # Get star count
+    stars = len(line) - len(line.lstrip("*"))
+
+    # Italics for non-even
+    if stars % 2 == 1:
+        ctx.flip_italic()
+
+    # Bold if theres more than one, coexists with italics
+    if stars > 1:
+        ctx.flip_bold()
+
+    # Add star count to index
+    return stars
+
+
+def _run_cheeky(ctx: Context, line: str) -> tuple:
+    """Run parsing for cheeky links (the <> links)"""
+
+    # Metadata
+    link = ""
+    flipflop = False
+
+    # Go through each character
+    for c in line[1:]:
+        # Flipflop
+        if flipflop:
+            flipflop = False
+            link += c
+        # Backslash for flipflop
+        elif c == "\\":
+            flipflop = True
+        # End of link
+        elif c == ">":
+            break
+        # Character in link
+        else:
+            link += c
+
+    # Construct new run
+    run = Run(ctx, link, link=(link, True))
+
+    # Return ind and link
+    return len(link) + 2, run
 
 
 # Command-line
