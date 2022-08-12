@@ -138,7 +138,7 @@ class Paragraph:
             # Bold/italics
             if c == "*":
                 # Calculate add and flipflop
-                # TODO: check this flipflop works cause of that continue? then apply it to cheeky links
+                # TODO: check this flipflop works cause of that continue? then apply it to cheeky links. move this above `if c == "*"`
                 add = flipflop  # TODO: check if this add should be above or below and how it relates to finish existing buffer
                 if flipflop:
                     flipflop = False
@@ -174,13 +174,13 @@ class Paragraph:
                         link += check
                 # Decide if we got a link, needed in case of only having backlashed >'s in a line
                 if got:
-                    # TODO: check backslash flipflops here
                     # Finish existing buffer
                     runs.append(Run(ctx, buf))
                     buf = ""
                     add = False
+                    ind += len(link) + 1
                     # Add new link
-                    # TODO: finish
+                    runs.append(Run(ctx, link, link=(link, True)))
 
             # Proper link (external or internal)
             match = re.search(
