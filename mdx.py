@@ -155,86 +155,40 @@ class Paragraph:
                 res = _run_cheeky(ctx, line[ind:])
                 ind += res[0]
                 runs.append(res[1])
-            # Normal character
+            # Misc
             else:
-                buf += line[ind]
-                ind += 1
+                # Find instances of link
+                match = re.search(
+                    r"^\[.+\]\(.*\)",
+                    line[ind:],
+                )
 
-            # TODO: implement normal link again
-            # # Bold/italics
-            # if flipflop:
-            #     flipflop = False
-            # elif c == "\\":
-            #     flipflop = True
-            #     continue
-            # elif c == "*":
-            #     # Finish existing buffer
-            #     runs.append(Run(ctx, buf))
-            #     buf = ""
-            #     # Get star length
-            #     stars = len(line[ind:]) - len(line[ind:].lstrip("*"))
-            #     # Italics if theres a non-even amount
-            #     if stars % 2 == 1:
-            #         ctx.flip_italic()
-            #     # Bold if theres two or more
-            #     if stars > 1:
-            #         ctx.flip_bold()
-            #     ind += stars - 1
-            # # Cheeky link (external only)
-            # elif c == "<" and ">" in line[ind:]:
-            #     # Get link contents, cant use partition due to inner backslashes
-            #     link = ""
-            #     backslash = False
-            #     got = False
-            #     for check in line[ind + 1 :]:
-            #         if backslash:
-            #             backslash = False
-            #             link += check
-            #         elif check == "\\":
-            #             backslash = True
-            #         elif check == ">":
-            #             got = True
-            #             break
-            #         else:
-            #             link += check
-            #     # Decide if we got a link, needed in case of only having backlashed >'s in a line
-            #     if got:
-            #         # Finish existing buffer
-            #         runs.append(Run(ctx, buf))
-            #         buf = ""
-            #         ind += len(link) + 1
-            #         # Add new link
-            #         runs.append(Run(ctx, link, link=(link, True)))
-            # # Proper link (external or internal) or nothing
-            # else:
-            #     match = re.search(
-            #         r"^\[.+\]\(.*\)",
-            #         line[ind:],
-            #     )
-            #     if match:
-            #         # Finish existing buffer and skip link
-            #         runs.append(Run(ctx, buf))
-            #         buf = ""
-            #         ind += len(match.group(0)) - 1
-            #         # Parse components
-            #         splitted = match.group(0).split("](", 1)
-            #         link = splitted[1][:-1].strip()
-            #         # Add link
-            #         if link.startswith("#"):
-            #             # Internal link
-            #             text = splitted[0][1:]
-            #             runs.append(Run(ctx, text, link=(link[1:], False)))
-            #         else:
-            #             # External link
-            #             text = splitted[0][
-            #                 1:
-            #             ]  # TODO: parse markdown rather than raw text
-            #             # TODO: include local uris as an automatic appendix :)
-            #             runs.append(Run(ctx, text, link=(link, True)))
+                # Link
+                if match:
+                    # Finish existing buffer and skip link
+                    runs.append(Run(ctx, buf))
+                    buf = ""
+                    ind += len(match.group(0))
+                    # Parse components
+                    splitted = match.group(0).split("](", 1)
+                    link = splitted[1][:-1].strip()
+                    # Add link
+                    if link.startswith("#"):
+                        # Internal link
+                        text = splitted[0][1:]
+                        runs.append(Run(ctx, text, link=(link[1:], False)))
+                    else:
+                        # External link
+                        text = splitted[0][
+                            1:
+                        ]  # TODO: parse markdown rather than raw text
+                        # TODO: include local uris as an automatic appendix :)
+                        runs.append(Run(ctx, text, link=(link, True)))
 
-            # # Add to ind/buf
-            # buf += c
-            # ind += 1
+                # Normal character
+                else:
+                    buf += line[ind]
+                    ind += 1
 
         # Create paragraph and return
         runs.append(Run(ctx, buf))
