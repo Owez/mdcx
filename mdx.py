@@ -6,6 +6,7 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_BREAK
 from docx.shared import RGBColor, Pt, Cm
 import sys
+import PIL.Image
 
 STYLE_CODE = "Code"
 CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --foxtrot    Alternate document format"
@@ -371,12 +372,19 @@ class Image:
         return Image(copy(ctx), link, caption)
 
     def _docx(self, docx_doc: docx.Document) -> list[docx.text.paragraph.Paragraph]:
+        # Get image width/heigth
+        img = PIL.Image.open(self.link)
+        width, height = (img.width, img.height)
+
         # Insert image
-        # TODO: width/height adjustment algorithm
         docx_para_image = docx_doc.add_paragraph()
         docx_run = docx_para_image.add_run()
         try:
-            docx_run.add_picture(self.link, height=Cm(10))
+            # Width/height adjustment so it won't fall off the page
+            if height > width:
+                docx_run.add_picture(self.link, height=Cm(10))
+            else:
+                docx_run.add_picture(self.link, width=Cm(12))
         except:
             raise Exception(
                 f"Couldn't add image {self.link} to document; check if it exists"
