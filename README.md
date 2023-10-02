@@ -1,19 +1,19 @@
-# mdx
+# mdcx
 
-Seemless markdown to docx converter.
+Seamless markdown to docx converter.
 
 ## Example
 
 Command-line:
 
 ```shell
-$ mdx hippo.md hippo.docx
+$ mdcx hippo.md hippo.docx
 ```
 
 In Python:
 
 ```python
-from mdx import Document
+from mdcx import Document
 
 doc = Document("Markdown here!")
 doc.save("example.docx")
@@ -21,10 +21,10 @@ doc.save("example.docx")
 
 ## Installation
 
-To install mdx, simply download it from PyPI:
+To install mdcx, simply download it from PyPI:
 
 ```shell
-$ pip3 install mdx
+$ pip3 install mdcx
 ```
 
 ## Showcase
@@ -35,7 +35,7 @@ Here's a generated document from the `examples/` directory using the default the
 
 ## Roadmap
 
-Here are the upcoming features for the development of mdx:
+Here are the upcoming features for the development of mdcx:
 
 - Markdown:
   - [ ] Heading links

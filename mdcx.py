@@ -9,13 +9,14 @@ import sys
 import PIL.Image
 
 STYLE_CODE = "Code"
-CLI_HELP = "Usage: mdx [in] [out]\n\n  Seemless markdown to docx converter\n\nArguments:\n  --foxtrot    Alternate document format"
+CLI_HELP = "Usage: mdcx [in] [out?]\n\n  Seamless markdown to docx converter\n\nArguments:\n  --foxtrot    Alternate document format"  # TODO: not just foxtrot
 
 
+# TODO: private these properly
 class Context:
     """Contextual information for compartmentalised converting"""
 
-    def __init__(self) -> None:
+    def __init__(self, wd: Path | None = None) -> None:
         self.line = 0
         self.heading = None
         self.italic = False
@@ -23,6 +24,7 @@ class Context:
         self.underline = False
         self.strikethrough = False
         self.figures = 0
+        self.wd = wd
 
     def no_spacing(self) -> bool:
         """Checks if elements should have spacing within the current section"""
@@ -46,6 +48,10 @@ class Context:
     def flip_bold(self):
         """Flips bold value"""
         self.bold = not self.bold
+
+    def link_to(self, link: str | Path) -> Path:
+        """Gets link to something from the markdown file's directory"""
+        return self.wd / link
 
 
 class Heading:
@@ -355,8 +361,15 @@ class Image:
     """Image with some optional caption text"""
 
     def __init__(self, ctx: Context, link: str, caption: Paragraph = None) -> None:
+        # Get and check image link
+        real_link = ctx.link_to(link)
+        if not real_link.exists():
+            raise Exception(f"Image linked to as {link} does not exist")
+
+        # Set other values
         self.ctx = ctx
-        self.link = link
+        self.link = real_link
+        self.safe_link = str(real_link.absolute())
         self.caption = caption
 
     @staticmethod
@@ -382,13 +395,11 @@ class Image:
         try:
             # Width/height adjustment so it won't fall off the page
             if height > width:
-                docx_run.add_picture(self.link, height=Cm(10))
+                docx_run.add_picture(self.safe_link, height=Cm(10))
             else:
-                docx_run.add_picture(self.link, width=Cm(12))
-        except:
-            raise Exception(
-                f"Couldn't add image {self.link} to document; check if it exists"
-            )
+                docx_run.add_picture(self.safe_link, width=Cm(12))
+        except Exception as e:
+            raise Exception(f"Failed to add image {self.link} to document ({e})")
 
         # Add caption
         if self.caption:
@@ -447,12 +458,12 @@ class Style:
 class Document:
     """High-level document abstractions for conversion"""
 
-    def __init__(self, md: str, style: Style = Style.andy()):
+    def __init__(self, md: str, path: Path, style: Style = Style.andy()):
         # Components
         self.elements = []
         self.title = None
         self.subtitle = None
-        self.ctx = Context()
+        self.ctx = Context(path.parent)
         self.style = style
 
         # Remove toc and clear up lines
@@ -524,7 +535,7 @@ class Document:
                 # Numbered point
                 try:
                     if "." not in stripped:
-                        raise Exception()
+                        raise Exception()  # TODO: better error
                     int(stripped.split(".", 1)[0])
                     self.elements.append(PointNumbered._md(copy(self.ctx), line))
                 # Paragraph
@@ -794,25 +805,42 @@ def _run_cheeky(ctx: Context, line: str) -> tuple:
     return len(link) + 2, run
 
 
+def get_docx_path(args: list[str], md_path: Path) -> Path:
+    # Provide just normal if it's there
+    if len(args) > 1:
+        return Path(args[1])
+
+    # Base if on first arg if not
+    return Path.cwd() / Path(md_path.stem + ".docx")
+
+
 # Command-line
 if __name__ == "__main__":
     # Get and clean arguments
     args = sys.argv[1:]
+
     # Make sure theres at least an input and output or show help
     if len(args) == 0:
         _err_exit("Please provide [in]")
     elif "--help" in args[2:]:
         print(CLI_HELP)
         sys.exit(0)
+
     # Get foxtrot setting
     foxtrot = "--foxtrot" in args[2:]
+
     # Get markdown from file
     md = ""
+    md_path = Path(args[0])
+    docx_path = get_docx_path(args, md_path)
+    if not md_path.exists():
+        raise Exception(f"Markdown file '{args[0]}' doesn't exist")
     try:
-        with open(args[0], "r") as file:
+        with open(md_path, "r") as file:
             md = file.read()
     except Exception as e:
-        _err_exit(f"Invalid file, {e}")
+        _err_exit(f"Markdown file '{args[0]}' is invalid ({e})")
+
     # Create and save document to defined parts
     style = Style.andy() if not foxtrot else Style.foxtrot()
-    Document(md, style).save(args[1])
+    Document(md, md_path, style).save(docx_path)

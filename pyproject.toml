@@ -1,14 +1,19 @@
 [tool.poetry]
-name = "mdx"
+name = "mdcx"
 version = "0.1.0"
-description = "Seemless markdown to docx converter."
+description = "Seamless markdown to docx converter."
 authors = ["Owen Griffiths <root@ogriffiths.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
+python-docx = "^0.8.11"
+pillow = "^10.0.1"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.9.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

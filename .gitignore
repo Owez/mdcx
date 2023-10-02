@@ -1,4 +1,4 @@
-examples/*.docx
+**/*.docx
 __pycache__/
 .vscode/
-.DS*
+**/.DS*

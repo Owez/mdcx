@@ -1,19 +1,21 @@
-from mdx import Document, Style
+from mdcx import Document, Style
 
 # AirBnB
-md = open("airbnb.md", "r").read()
-doc = Document(md)
+md_path = "airbnb.md"
+md = open(md_path, "r").read()
+doc = Document(md, md_path)
 doc.save("airbnb.docx")
 
 # AirBnB with alternate theme
-doc = Document(md, Style.foxtrot())
+doc = Document(md, md_path, Style.foxtrot())
 doc.save("airbnb_foxtrot.docx")
 
 # Constructs
-md = open("constructs.md", "r").read()
-doc = Document(md)
+md_path = "constructs.md"
+md = open(md_path, "r").read()
+doc = Document(md, md_path)
 doc.save("constructs.docx")
 
 # Constructs with alternate theme
-doc = Document(md, Style.foxtrot())
+doc = Document(md, md_path, Style.foxtrot())
 doc.save("constructs_foxtrot.docx")
